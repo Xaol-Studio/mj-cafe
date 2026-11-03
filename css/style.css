@@ -869,7 +869,7 @@ button {
 /* --------------------------------------------------------------------------
 efecto god 
    -------------------------------------------------------------------------- */
-/* Animación de entrada con giro y rebote para el modal */
+
 @keyframes modalFlipIn {
     0% {
         opacity: 0;
@@ -891,7 +891,6 @@ efecto god
     transform-origin: center center;
 }
 
-/* Animación festiva constante para el matasuegras 🥳 */
 @keyframes partyBounce {
     0%, 100% { transform: translateY(0) rotate(0deg); }
     25% { transform: translateY(-6px) rotate(-12deg); }
@@ -902,6 +901,48 @@ efecto god
     display: inline-block;
     animation: partyBounce 1.2s ease-in-out infinite;
 }
+
+/* --------------------------------------------------------------------------
+efecto god de tarjetas 
+   -------------------------------------------------------------------------- */
+/* --- EFECTOS INTERACTIVOS EN TARJETAS DE PRODUCTOS --- */
+
+/* Transición suave para la tarjeta y contenedor */
+.product-card {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                box-shadow 0.3s ease;
+    will-change: transform;
+}
+
+/* Elevación 3D y resplandor al pasar el cursor */
+.product-card:hover {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35), 
+                0 0 15px rgba(200, 157, 102, 0.15);
+}
+
+/* Zoom suave en las fotos del café al hacer hover */
+.product-card img {
+    transition: transform 0.4s ease;
+}
+
+.product-card:hover img {
+    transform: scale(1.05);
+}
+
+/* Efecto de pulsación al dar clic en el botón "+ Agregar" */
+.product-card button {
+    transition: transform 0.15s ease, background-color 0.2s ease;
+}
+
+.product-card button:active {
+    transform: scale(0.92);
+}
+
+
+
+
+
 
 
 
