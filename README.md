@@ -21,7 +21,7 @@ Este sistema soluciona el problema de los estudiantes y profesores que cuentan �
 ## 🏛️ Estructura del Proyecto
 
 ```
-proyecto-SaaS/
+mj-cafe/
 ├── index.html                    # Redirección automática a la aplicación principal
 ├── README.md                     # Documentación general y guía rápida
 ├── BACKEND_ROADMAP.md            # Masterclass de backend, SQL y retos para iamhuitron
