@@ -905,9 +905,7 @@ efecto god
 /* --------------------------------------------------------------------------
 efecto god de tarjetas 
    -------------------------------------------------------------------------- */
-/* --- EFECTOS INTERACTIVOS EN TARJETAS DE PRODUCTOS --- */
 
-/* Transición suave para la tarjeta y contenedor */
 .product-card {
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), 
                 box-shadow 0.3s ease;
@@ -921,7 +919,6 @@ efecto god de tarjetas
                 0 0 15px rgba(200, 157, 102, 0.15);
 }
 
-/* Zoom suave en las fotos del café al hacer hover */
 .product-card img {
     transition: transform 0.4s ease;
 }
@@ -930,7 +927,6 @@ efecto god de tarjetas
     transform: scale(1.05);
 }
 
-/* Efecto de pulsación al dar clic en el botón "+ Agregar" */
 .product-card button {
     transition: transform 0.15s ease, background-color 0.2s ease;
 }
@@ -939,6 +935,34 @@ efecto god de tarjetas
     transform: scale(0.92);
 }
 
+/* --------------------------------------------------------------------------
+efecto god de tarjetas 2
+   -------------------------------------------------------------------------- */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(24px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 2. Aplicar la animación a cada tarjeta */
+.product-card {
+    animation: fadeInUp 0.45s ease-out forwards;
+}
+
+/* 3. Retraso secuencial (efecto cascada tarjeta por tarjeta) */
+.product-card:nth-child(1) { animation-delay: 0.05s; }
+.product-card:nth-child(2) { animation-delay: 0.10s; }
+.product-card:nth-child(3) { animation-delay: 0.15s; }
+.product-card:nth-child(4) { animation-delay: 0.20s; }
+.product-card:nth-child(5) { animation-delay: 0.25s; }
+.product-card:nth-child(6) { animation-delay: 0.30s; }
+.product-card:nth-child(7) { animation-delay: 0.35s; }
+.product-card:nth-child(8) { animation-delay: 0.40s; }
 
 
 
