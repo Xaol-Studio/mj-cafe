@@ -962,3 +962,12 @@ efecto god de tarjetas 2
 .product-card:nth-child(7) { animation-delay: 1.05s; }
 .product-card:nth-child(8) { animation-delay: 1.20s; }
 
+/* --------------------------------------------------------------------------
+dezplazamiento god
+   -------------------------------------------------------------------------- */
+html {
+    scroll-behavior: smooth;
+}
+
+
+
