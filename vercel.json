@@ -2,9 +2,9 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/", "destination": "/html/index.html" },
-    { "source": "/cocina", "destination": "/html/cocina.html" },
-    { "source": "/menu", "destination": "/html/index.html" }
+    { "source": "/", "destination": "/html/index" },
+    { "source": "/cocina", "destination": "/html/cocina" },
+    { "source": "/menu", "destination": "/html/index" }
   ],
   "headers": [
     {
