@@ -234,7 +234,7 @@ button {
 }
 
 .hero-banner {
-  background: linear-gradient(135deg, #6f4e37 0%, #8b5a2b 60%, #a06535 100%);
+  background: linear-gradient(135deg, #5c3a21 0%, #7a4b2a 60%, #8c5630 100%);
   color: #ffffff;
   border-radius: var(--radius-lg);
   padding: 40px;
