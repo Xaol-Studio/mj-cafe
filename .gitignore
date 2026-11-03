@@ -1,0 +1,13 @@
+# Logs y entornos
+*.log
+.env
+
+# Base de datos local transaccional generada
+# (Si desean incluir una base pre-poblada, eliminen la siguiente línea)
+database/*.sqlite-journal
+
+# Editores y SO
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
