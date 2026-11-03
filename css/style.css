@@ -865,3 +865,43 @@ button {
     max-width: 100%;
   }
 }
+
+/* --------------------------------------------------------------------------
+efecto god 
+   -------------------------------------------------------------------------- */
+/* Animación de entrada con giro y rebote para el modal */
+@keyframes modalFlipIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3) rotate(-15deg);
+    }
+    70% {
+        opacity: 1;
+        transform: scale(1.05) rotate(3deg);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+/* Aplicar la animación a la tarjeta del modal cuando se abre */
+.modal-card {
+    animation: modalFlipIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    transform-origin: center center;
+}
+
+/* Animación festiva constante para el matasuegras 🥳 */
+@keyframes partyBounce {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-6px) rotate(-12deg); }
+    75% { transform: translateY(-3px) rotate(12deg); }
+}
+
+.party-icon {
+    display: inline-block;
+    animation: partyBounce 1.2s ease-in-out infinite;
+}
+
+
+
