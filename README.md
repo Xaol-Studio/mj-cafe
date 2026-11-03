@@ -2,11 +2,23 @@
 > **Plataforma Web de Pedidos Anticipados & Programa de Lealtad Digital para MJ Café (San Sebastián Xhala, Edomex)**  
 > *Proyecto universitario de programación & Producto SaaS comercial de [XAOL Studio](https://github.com/Xaol-Studio).*
 
+[![Deploy on Vercel](https://img.shields.io/badge/Deploy%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://mj-cafe.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-mj--cafe.vercel.app-2ea44f?style=for-the-badge&logo=googlechrome&logoColor=white)](https://mj-cafe.vercel.app)
+[![KDS Barista](https://img.shields.io/badge/KDS%20Barista-mj--cafe.vercel.app%2Fcocina-c89d66?style=for-the-badge&logo=coffeescript&logoColor=white)](https://mj-cafe.vercel.app/cocina)
+
 ![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4?style=flat&logo=php&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=flat&logo=sqlite&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-Compatible-4479A1?style=flat&logo=mysql&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-Vanilla%20ES6%2B-F7DF1E?style=flat&logo=javascript&logoColor=black)
 ![CSS3](https://img.shields.io/badge/CSS3-Modern%20Design-1572B6?style=flat&logo=css3&logoColor=white)
+
+---
+
+## 🔗 Enlaces Rápidos en Producción
+
+- 🌐 **Tienda / Menú de Clientes:** [https://mj-cafe.vercel.app](https://mj-cafe.vercel.app)
+- 👨‍🍳 **Pantalla de Barista / Cocina (KDS):** [https://mj-cafe.vercel.app/cocina](https://mj-cafe.vercel.app/cocina)
+- 🎟️ **Programa de Lealtad (Club MJ):** Integrado en barra y modal de la tienda
 
 ---
 
