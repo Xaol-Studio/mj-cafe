@@ -654,7 +654,7 @@ button {
 .form-group label {
   font-size: 0.82rem;
   font-weight: 700;
-  color: var(--color-primary);
+  color: #f5efe6;
 }
 
 .form-control {
