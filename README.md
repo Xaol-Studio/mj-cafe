@@ -2,15 +2,26 @@
 > **Plataforma Web de Pedidos Anticipados & Programa de Lealtad Digital para MJ Café (San Sebastián Xhala, Edomex)**  
 > *Proyecto universitario de programación & Producto SaaS comercial de [XAOL Studio](https://github.com/Xaol-Studio).*
 
-[![Deploy on Vercel](https://img.shields.io/badge/Deploy%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://mj-cafe.vercel.app)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-mj--cafe.vercel.app-2ea44f?style=for-the-badge&logo=googlechrome&logoColor=white)](https://mj-cafe.vercel.app)
-[![KDS Barista](https://img.shields.io/badge/KDS%20Barista-mj--cafe.vercel.app%2Fcocina-c89d66?style=for-the-badge&logo=coffeescript&logoColor=white)](https://mj-cafe.vercel.app/cocina)
+<p align="left">
+  <a href="https://mj-cafe.vercel.app"><img src="https://img.shields.io/badge/LIVE_STORE-mj--cafe.vercel.app-B89758?style=for-the-badge&logo=vercel&logoColor=FAF8F5&labelColor=141210" alt="Live Store" /></a>
+  <a href="https://mj-cafe.vercel.app/cocina"><img src="https://img.shields.io/badge/KDS_BARISTA-mj--cafe.vercel.app%2Fcocina-1D1A16?style=for-the-badge&logo=coffeescript&logoColor=D4B87A&labelColor=141210" alt="KDS Barista" /></a>
+  <a href="https://github.com/Xaol-Studio"><img src="https://img.shields.io/badge/STUDIO-@Xaol--Studio-1D1A16?style=for-the-badge&logo=github&logoColor=D4B87A&labelColor=141210" alt="XAOL Studio" /></a>
+</p>
 
-![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4?style=flat&logo=php&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=flat&logo=sqlite&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-Compatible-4479A1?style=flat&logo=mysql&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-Vanilla%20ES6%2B-F7DF1E?style=flat&logo=javascript&logoColor=black)
-![CSS3](https://img.shields.io/badge/CSS3-Modern%20Design-1572B6?style=flat&logo=css3&logoColor=white)
+<p align="left">
+  <img src="https://img.shields.io/badge/PHP-8.1%2B_(PDO)-1D1A16?style=flat-square&logo=php&logoColor=D4B87A&labelColor=141210" alt="PHP" />
+  <img src="https://img.shields.io/badge/SQLite_3-MySQL_3NF-1D1A16?style=flat-square&logo=sqlite&logoColor=D4B87A&labelColor=141210" alt="Database" />
+  <img src="https://img.shields.io/badge/JavaScript-Vanilla_ES6%2B-1D1A16?style=flat-square&logo=javascript&logoColor=D4B87A&labelColor=141210" alt="JS" />
+  <img src="https://img.shields.io/badge/Status-Production_Active-1B3B2B?style=flat-square&labelColor=141210&logoColor=D4B87A" alt="Status" />
+</p>
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#141210', 'primaryTextColor': '#FAF8F5', 'primaryBorderColor': '#B89758', 'lineColor': '#B89758', 'secondaryColor': '#1D1A16', 'tertiaryColor': '#0D0C0A', 'mainBkg': '#141210', 'nodeBorder': '#B89758', 'clusterBkg': '#0D0C0A', 'clusterBorder': '#262420', 'titleColor': '#D4B87A', 'edgeLabelBackground': '#141210', 'fontFamily': 'JetBrains Mono, Plus Jakarta Sans, sans-serif' }}}%%
+flowchart LR
+    A["Mobile Customer Menu<br/>(Pre-Order & Club MJ Loyalty)"] -->|REST JSON / Fallback| B["PHP 8 PDO API Layer<br/>(ACID Transactions)"]
+    B --> C["3NF Relational DB<br/>(MySQL / SQLite)"]
+    B --> D["Barista KDS Display<br/>(pendiente → preparando → listo)"]
+```
 
 ---
 
