@@ -1,17 +1,7 @@
 <?php
 /**
- * ==============================================================================
- * PROYECTO: SaaS MJ CAFÉ - FES Cuautitlán Campo 4
- * ARCHIVO: backend/api/lealtad.php
- * ==============================================================================
- * ENDPOINT DEL PROGRAMA DE LEALTAD "CLUB MJ CAFÉ"
- * Asignado a: iamhuitron & GorchRosas
- * 
- * REGLAS DE NEGOCIO:
- * - Cada compra o pedido anticipado suma 1 sello digital.
- * - Al juntar 6 sellos, el estudiante/cliente obtiene 1 bebida de cortesía
- *   (Americano o Latte chico) y el contador de sellos se reinicia a 0.
- * ==============================================================================
+ * Endpoint del programa de lealtad Club MJ Café
+ * Regla: 6 sellos acumulados = 1 bebida de cortesía
  */
 
 declare(strict_types=1);
@@ -25,16 +15,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
-    // -------------------------------------------------------------------------
-    // CONSULTA DE SELLOS POR NÚMERO DE TELÉFONO
-    // Ejemplo: /backend/api/lealtad.php?telefono=5512345678
-    // -------------------------------------------------------------------------
-    $telefono = trim($_GET['telefono'] ?? '');
+    $telefono = preg_replace('/\D/', '', (string)($_GET['telefono'] ?? ''));
 
-    if (empty($telefono)) {
+    if (strlen($telefono) < 10) {
         sendJsonResponse(400, [
             'ok' => false,
-            'error' => 'Debes ingresar un número de teléfono para consultar tu tarjeta de sellos.'
+            'error' => 'Ingresa un número de teléfono de 10 dígitos.'
         ]);
     }
 
@@ -53,12 +39,12 @@ if ($method === 'GET') {
             sendJsonResponse(404, [
                 'ok' => false,
                 'encontrado' => false,
-                'mensaje' => 'Aún no tienes tarjeta registrada. Se creará automáticamente con tu primer pedido.'
+                'mensaje' => 'Aún no hay sellos registrados con este número. Se activará en tu primer pedido.'
             ]);
         }
 
         $sellos = (int)$cliente['sellos_acumulados'];
-        $faltantes = max(0, 6 - $sellos);
+        $faltantes = max(0, 6 - ($sellos % 6 === 0 && $sellos > 0 ? 6 : $sellos));
 
         sendJsonResponse(200, [
             'ok' => true,
@@ -66,10 +52,11 @@ if ($method === 'GET') {
             'cliente' => [
                 'id' => (int)$cliente['id'],
                 'nombre' => $cliente['nombre'],
+                'telefono' => $cliente['telefono'],
                 'carrera' => $cliente['carrera'],
                 'sellos' => $sellos,
                 'sellos_meta' => 6,
-                'sellos_faltantes' => $faltantes,
+                'sellos_faltantes' => max(0, 6 - $sellos),
                 'tiene_recompensa_disponible' => ($sellos >= 6),
                 'recompensas_canjeadas' => (int)$cliente['recompensas_canjeadas'],
                 'total_visitas' => (int)$cliente['total_visitas']
@@ -81,23 +68,18 @@ if ($method === 'GET') {
     }
 
 } elseif ($method === 'POST') {
-    // -------------------------------------------------------------------------
-    // CANJEAR RECOMPENSA (RETO TODO PARA iamhuitron & GorchRosas)
-    // Cuando el barista escanea o verifica 6 sellos en barra:
-    // -------------------------------------------------------------------------
     $rawInput = file_get_contents('php://input');
-    $data = json_decode($rawInput, true);
-    $telefono = trim((string)($data['telefono'] ?? ''));
+    $data = json_decode($rawInput ?: '', true);
+    $telefono = preg_replace('/\D/', '', (string)($data['telefono'] ?? ''));
 
-    if (empty($telefono)) {
-        sendJsonResponse(400, ['ok' => false, 'error' => 'Teléfono requerido para canjear.']);
+    if (strlen($telefono) < 10) {
+        sendJsonResponse(400, ['ok' => false, 'error' => 'Teléfono válido requerido para canjear.']);
     }
 
     try {
         $pdo = Database::getConnection();
 
-        // 1. Verificar si tiene los 6 sellos necesarios
-        $stmt = $pdo->prepare("SELECT id, sellos_acumulados FROM clientes_lealtad WHERE telefono = :tel LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id, nombre, sellos_acumulados, recompensas_canjeadas FROM clientes_lealtad WHERE telefono = :tel LIMIT 1");
         $stmt->execute([':tel' => $telefono]);
         $cliente = $stmt->fetch();
 
@@ -105,25 +87,35 @@ if ($method === 'GET') {
             sendJsonResponse(404, ['ok' => false, 'error' => 'Cliente no encontrado.']);
         }
 
-        if ((int)$cliente['sellos_acumulados'] < 6) {
+        $sellosActuales = (int)$cliente['sellos_acumulados'];
+        if ($sellosActuales < 6) {
             sendJsonResponse(400, [
                 'ok' => false,
-                'error' => 'Aún no cumples la meta de 6 sellos (Sellos actuales: ' . $cliente['sellos_acumulados'] . ').'
+                'error' => "Aún no alcanzas los 6 sellos (tienes {$sellosActuales})."
             ]);
         }
 
-        // 2. Canjear: Restar 6 sellos y sumar 1 a recompensas_canjeadas
+        $nuevosSellos = $sellosActuales - 6;
+        $nuevasRecompensas = (int)$cliente['recompensas_canjeadas'] + 1;
+
         $stmtUpd = $pdo->prepare("
             UPDATE clientes_lealtad 
-            SET sellos_acumulados = sellos_acumulados - 6,
-                recompensas_canjeadas = recompensas_canjeadas + 1
+            SET sellos_acumulados = :sellos,
+                recompensas_canjeadas = :recompensas,
+                last_visit_at = CURRENT_TIMESTAMP
             WHERE id = :id
         ");
-        $stmtUpd->execute([':id' => $cliente['id']]);
+        $stmtUpd->execute([
+            ':sellos' => $nuevosSellos,
+            ':recompensas' => $nuevasRecompensas,
+            ':id' => $cliente['id']
+        ]);
 
         sendJsonResponse(200, [
             'ok' => true,
-            'mensaje' => '¡Felicidades! Recompensa canjeada con éxito. Disfruta tu café de cortesía en MJ Café.'
+            'mensaje' => '¡Café de cortesía canjeado! Presenta esta pantalla en barra.',
+            'sellos_restantes' => $nuevosSellos,
+            'recompensas_canjeadas' => $nuevasRecompensas
         ]);
 
     } catch (PDOException $e) {

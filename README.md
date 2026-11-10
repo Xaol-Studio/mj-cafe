@@ -47,25 +47,23 @@ Este sistema soluciona el problema de los estudiantes y profesores que cuentan �
 mj-cafe/
 ├── index.html                    # Redirección automática a la aplicación principal
 ├── README.md                     # Documentación general y guía rápida
-├── BACKEND_ROADMAP.md            # Masterclass de backend, SQL y retos para iamhuitron
-├── PITCH_VENTAS_MJ_CAFE.md       # Guion comercial para vender el sistema a los dueños
 │
 ├── database/                     # Capa de datos relacional (3FN)
 │   ├── schema.sql                # DDL para MySQL / MariaDB con claves foráneas
 │   ├── schema_sqlite.sql         # DDL optimizado para pruebas en SQLite local
 │   ├── seeds.sql                 # Menú real de MJ Café (frappés, café, bagels)
-│   └── setup_sqlite.php          # Inicializador 1-clic de SQLite local
+│   └── setup_sqlite.php          # Inicializador de SQLite local
 │
 ├── backend/                      # Capa de servicios y lógica de negocio (PHP)
 │   ├── config/
-│   │   └── database.php          # Gestor de conexión PDO universal (SQLite/MySQL)
+│   │   └── database.php          # Gestor de conexión PDO (SQLite/MySQL)
 │   ├── api/
-│   │   ├── productos.php         # [RESUELTO] Catálogo de productos con INNER JOIN
-│   │   ├── pedidos.php           # [DIDÁCTICO] Transacciones ACID y registro de pedidos
-│   │   ├── lealtad.php           # [DIDÁCTICO] Consulta y canje de la tarjeta de sellos
-│   │   └── cocina.php            # API para la pantalla de comandas del barista
+│   │   ├── productos.php         # Catálogo de productos y categorías con INNER JOIN
+│   │   ├── pedidos.php           # Registro de pedidos con transacción PDO y consulta por folio
+│   │   ├── lealtad.php           # Consulta y canje de la tarjeta de 6 sellos (Club MJ)
+│   │   └── cocina.php            # Comandas en tiempo real y corte de ventas para el barista
 │   ├── index.php                 # Directorio informativo de endpoints REST
-│   └── a.php                     # Enrutador heredado
+│   └── a.php                     # Redirección principal
 │
 ├── html/                         # Vistas del usuario
 │   ├── index.html                # Menú para clientes, recolección y tarjeta Club MJ

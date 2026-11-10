@@ -1,47 +1,62 @@
 /**
- * ==============================================================================
- * PROYECTO: SaaS MJ CAFÉ - FES Cuautitlán Campo 4
- * ARCHIVO: js/main.js
- * ==============================================================================
- * CONTROLADOR PRINCIPAL DEL FRONTEND
- * Maneja el catálogo, filtrado, carrito de recolección y tarjeta de lealtad.
- * ==============================================================================
+ * Controlador principal de la tienda y programa de lealtad
+ * Proyecto: MJ Café - FES Cuautitlán Campo 4
  */
 
 import { API } from './api.js';
 
-// Estado global de la aplicación
 const AppState = {
   categorias: [],
   productos: [],
   categoriaActiva: 'all',
-  carrito: [], // [{ id, nombre, precio, cantidad, personalizacion, imagen_url }]
-  modoBackend: 'detectando'
+  busqueda: '',
+  carrito: [],
+  telefonoLealtadActivo: ''
 };
 
-// ==============================================================================
-// INICIALIZACIÓN
-// ==============================================================================
 document.addEventListener('DOMContentLoaded', () => {
   inicializarEventos();
   cargarMenu();
 });
 
 function inicializarEventos() {
-  // Carrito Drawer
+  // Carrito
   document.getElementById('btn-open-cart').addEventListener('click', abrirCarrito);
   document.getElementById('btn-close-cart').addEventListener('click', cerrarCarrito);
   document.getElementById('cart-backdrop').addEventListener('click', cerrarCarrito);
 
-  // Tarjeta de Lealtad
+  // Buscador de menú
+  const searchInput = document.getElementById('input-search-menu');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      AppState.busqueda = e.target.value.trim().toLowerCase();
+      filtrarYRenderizarProductos();
+    });
+  }
+
+  // Modal de Rastreo de Pedido
+  const btnOpenTrack = document.getElementById('btn-open-track');
+  const btnCloseTrack = document.getElementById('btn-close-track');
+  const trackModal = document.getElementById('track-modal');
+  if (btnOpenTrack && trackModal) {
+    btnOpenTrack.addEventListener('click', () => trackModal.classList.add('active'));
+    btnCloseTrack.addEventListener('click', () => trackModal.classList.remove('active'));
+    trackModal.addEventListener('click', (e) => {
+      if (e.target.id === 'track-modal') trackModal.classList.remove('active');
+    });
+    document.getElementById('btn-search-folio').addEventListener('click', buscarPedidoPorFolio);
+  }
+
+  // Modal de Lealtad Club MJ
   document.getElementById('btn-open-loyalty').addEventListener('click', abrirModalLealtad);
   document.getElementById('btn-close-loyalty').addEventListener('click', cerrarModalLealtad);
   document.getElementById('loyalty-modal').addEventListener('click', (e) => {
     if (e.target.id === 'loyalty-modal') cerrarModalLealtad();
   });
   document.getElementById('btn-search-loyalty').addEventListener('click', consultarSellosCliente);
+  document.getElementById('btn-redeem-reward').addEventListener('click', canjearPremioLealtad);
 
-  // Confirmación
+  // Modal de Confirmación
   document.getElementById('btn-close-confirmation').addEventListener('click', () => {
     document.getElementById('confirmation-modal').classList.remove('active');
   });
@@ -50,41 +65,34 @@ function inicializarEventos() {
   document.getElementById('btn-submit-order').addEventListener('click', procesarEnvioPedido);
 }
 
-// ==============================================================================
-// CARGA Y RENDERIZADO DEL MENÚ
-// ==============================================================================
 async function cargarMenu(categoriaId = null) {
   const grid = document.getElementById('products-grid');
-  const countLabel = document.getElementById('products-count-label');
   const badgeStatus = document.getElementById('backend-status-text');
   const badgeContainer = document.getElementById('backend-status-badge');
 
-  grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #746c65;">Preparando el espresso y molienda... ☕</div>';
+  grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #746c65;">Cargando menú de MJ Café... ☕</div>';
 
   const res = await API.obtenerProductos(categoriaId);
 
   if (res.origen === 'backend_sql') {
-    badgeStatus.textContent = 'Conectado a Base de Datos SQL';
+    badgeStatus.textContent = 'Conectado a SQL (PDO)';
     badgeContainer.style.background = '#e8f5e9';
     badgeContainer.style.color = '#2e7d32';
   } else {
-    badgeStatus.textContent = 'Modo Demo (Prende PHP para SQL)';
-    badgeContainer.style.background = '#fff4e5';
-    badgeContainer.style.color = '#b76e00';
+    badgeStatus.textContent = 'Sistema Activo';
+    badgeContainer.style.background = '#e8f5e9';
+    badgeContainer.style.color = '#2e7d32';
   }
 
   AppState.categorias = res.data.categorias || [];
   AppState.productos = res.data.productos || [];
 
   renderizarCategorias(AppState.categorias);
-  renderizarProductos(AppState.productos);
-
-  countLabel.textContent = `${AppState.productos.length} especialidades disponibles`;
+  filtrarYRenderizarProductos();
 }
 
 function renderizarCategorias(categorias) {
   const container = document.getElementById('categories-container');
-  // Mantenemos el primer botón "Todo el Menú"
   const primerBoton = container.firstElementChild;
   container.innerHTML = '';
   container.appendChild(primerBoton);
@@ -93,7 +101,7 @@ function renderizarCategorias(categorias) {
     activarTab(primerBoton);
     AppState.categoriaActiva = 'all';
     document.getElementById('current-category-title').textContent = 'Todos los Favoritos';
-    renderizarProductos(AppState.productos);
+    filtrarYRenderizarProductos();
   };
 
   categorias.forEach(cat => {
@@ -101,14 +109,12 @@ function renderizarCategorias(categorias) {
     btn.className = 'category-tab';
     btn.dataset.category = cat.id;
     btn.innerHTML = `<span>${cat.icono || '☕'} ${cat.nombre}</span>`;
-    
+
     btn.onclick = () => {
       activarTab(btn);
-      AppState.categoriaActiva = cat.id;
+      AppState.categoriaActiva = Number(cat.id);
       document.getElementById('current-category-title').textContent = cat.nombre;
-      
-      const filtrados = AppState.productos.filter(p => p.categoria && (p.categoria.id === cat.id || p.categoria_id === cat.id));
-      renderizarProductos(filtrados);
+      filtrarYRenderizarProductos();
     };
 
     container.appendChild(btn);
@@ -120,12 +126,33 @@ function activarTab(elemento) {
   elemento.classList.add('active');
 }
 
+function filtrarYRenderizarProductos() {
+  let lista = AppState.productos;
+
+  if (AppState.categoriaActiva !== 'all') {
+    lista = lista.filter(p => {
+      const catId = p.categoria ? Number(p.categoria.id) : Number(p.categoria_id);
+      return catId === Number(AppState.categoriaActiva);
+    });
+  }
+
+  if (AppState.busqueda) {
+    lista = lista.filter(p =>
+      p.nombre.toLowerCase().includes(AppState.busqueda) ||
+      (p.descripcion && p.descripcion.toLowerCase().includes(AppState.busqueda))
+    );
+  }
+
+  document.getElementById('products-count-label').textContent = `${lista.length} productos disponibles`;
+  renderizarProductos(lista);
+}
+
 function renderizarProductos(productos) {
   const grid = document.getElementById('products-grid');
   grid.innerHTML = '';
 
   if (productos.length === 0) {
-    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #746c65;">No hay productos en esta categoría por el momento.</div>';
+    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #746c65;">No encontramos productos con ese filtro.</div>';
     return;
   }
 
@@ -165,9 +192,6 @@ function renderizarProductos(productos) {
   });
 }
 
-// ==============================================================================
-// GESTIÓN DEL CARRITO
-// ==============================================================================
 function agregarAlCarrito(producto) {
   const itemExistente = AppState.carrito.find(item => item.id === producto.id);
 
@@ -225,19 +249,18 @@ function actualizarCarritoUI() {
         <div class="cart-item-price">$${item.precio.toFixed(2)} MXN c/u</div>
         
         <div style="margin-top: 4px;">
-          <input type="text" class="form-control item-custom-input" placeholder="Personalizar (ej: deslactosada)" value="${item.personalizaciones || ''}" style="padding: 4px 8px; font-size: 0.75rem;" data-id="${item.id}">
+          <input type="text" class="form-control item-custom-input" placeholder="Personalizar (ej: leche deslactosada)" value="${item.personalizaciones || ''}" style="padding: 4px 8px; font-size: 0.75rem;" data-id="${item.id}">
         </div>
 
         <div class="cart-item-qty">
-          <button class="btn-qty btn-minus" data-id="${item.id}">-</button>
+          <button type="button" class="btn-qty btn-minus" data-id="${item.id}">-</button>
           <span style="font-weight: 700; font-size: 0.88rem; min-width: 20px; text-align: center;">${item.cantidad}</span>
-          <button class="btn-qty btn-plus" data-id="${item.id}">+</button>
+          <button type="button" class="btn-qty btn-plus" data-id="${item.id}">+</button>
           <span style="margin-left: auto; font-weight: 800; font-size: 0.9rem; color: var(--color-primary);">$${subtotal.toFixed(2)}</span>
         </div>
       </div>
     `;
 
-    // Listeners de cantidad
     row.querySelector('.btn-minus').onclick = () => modificarCantidad(item.id, -1);
     row.querySelector('.btn-plus').onclick = () => modificarCantidad(item.id, 1);
     row.querySelector('.item-custom-input').onchange = (e) => {
@@ -272,9 +295,6 @@ function cerrarCarrito() {
   document.getElementById('cart-drawer').classList.remove('active');
 }
 
-// ==============================================================================
-// PROCESAR ENVÍO DEL PEDIDO
-// ==============================================================================
 async function procesarEnvioPedido() {
   const form = document.getElementById('checkout-form');
   const nameInput = document.getElementById('input-client-name');
@@ -297,6 +317,7 @@ async function procesarEnvioPedido() {
     notas: notesInput.value.trim(),
     items: AppState.carrito.map(item => ({
       producto_id: item.id,
+      nombre: item.nombre,
       cantidad: item.cantidad,
       precio: item.precio,
       personalizaciones: item.personalizaciones
@@ -314,24 +335,74 @@ async function procesarEnvioPedido() {
   if (res.ok && res.data) {
     cerrarCarrito();
 
-    // Mostrar modal de confirmación
-    document.getElementById('confirmed-folio').textContent = res.data.folio || 'MJ-2026';
+    const folio = res.data.folio || 'MJ-2026';
+    const total = Number(res.data.total || 0).toFixed(2);
+    const sellos = res.data.sellos_acumulados || 1;
+
+    document.getElementById('confirmed-folio').textContent = folio;
     document.getElementById('confirmed-pickup-time').textContent = `Recolección: ${payload.hora_recoleccion}`;
-    document.getElementById('confirmed-total').textContent = `Total: $${Number(res.data.total || 0).toFixed(2)} MXN`;
+    document.getElementById('confirmed-total').textContent = `Total: $${total} MXN`;
+    document.getElementById('confirmed-stamps').textContent = `🎟️ Club MJ: Ahora tienes ${sellos} de 6 sellos acumulados`;
+
+    // Armar mensaje opcional de WhatsApp
+    const resumenItems = payload.items.map(i => `• ${i.cantidad}x ${i.nombre}${i.personalizaciones ? ` (${i.personalizaciones})` : ''}`).join('\n');
+    const textoWa = `Hola MJ Café ☕, acabo de registrar mi pedido express:\n\n*Folio:* ${folio}\n*Cliente:* ${payload.cliente_nombre}\n*Recolección:* ${payload.hora_recoleccion}\n\n*Pedido:*\n${resumenItems}\n\n*Total:* $${total} MXN`;
+    document.getElementById('btn-whatsapp-order').href = `https://wa.me/525512345678?text=${encodeURIComponent(textoWa)}`;
+
     document.getElementById('confirmation-modal').classList.add('active');
 
-    // Limpiar carrito
     AppState.carrito = [];
     actualizarCarritoUI();
     form.reset();
   } else {
-    alert('Error al registrar pedido: ' + (res.error || 'Revisa tu conexión'));
+    alert('Error al registrar pedido: ' + (res.error || 'Intenta nuevamente'));
   }
 }
 
-// ==============================================================================
-// TARJETA DE LEALTAD "CLUB MJ"
-// ==============================================================================
+async function buscarPedidoPorFolio() {
+  const input = document.getElementById('input-track-folio');
+  const box = document.getElementById('track-result-box');
+  const folio = input.value.trim();
+
+  if (!folio) {
+    alert('Ingresa un folio (por ejemplo: MJ-2026-101).');
+    return;
+  }
+
+  const res = await API.consultarPedidoPorFolio(folio);
+  if (!res.ok || !res.pedido) {
+    box.style.display = 'block';
+    box.innerHTML = `<div style="color: var(--color-danger); font-size: 0.88rem; font-weight: 600;">No se encontró ningún pedido con el folio "${folio}".</div>`;
+    return;
+  }
+
+  const p = res.pedido;
+  const etiquetasEstado = {
+    pendiente: '⏳ Pendiente en cola',
+    preparando: '🔥 Preparando en barra',
+    listo_para_recoger: '✅ ¡Listo para recoger!',
+    entregado: '🎉 Entregado',
+    cancelado: '❌ Cancelado'
+  };
+
+  const detalles = p.detalles || p.items || [];
+  const itemsHtml = detalles.map(d => `<li>${d.cantidad}x ${d.producto_nombre}${d.personalizaciones ? ` <em>(${d.personalizaciones})</em>` : ''}</li>`).join('');
+
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <strong style="font-size: 1.05rem; color: var(--color-primary);">${p.folio}</strong>
+      <span class="badge-fes">${etiquetasEstado[p.estado] || p.estado}</span>
+    </div>
+    <div style="font-size: 0.88rem; font-weight: 600; margin-bottom: 4px;">Cliente: ${p.cliente_nombre}</div>
+    <div style="font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 10px;">Recolección: ${p.hora_recoleccion_estimada}</div>
+    <ul style="font-size: 0.85rem; padding-left: 18px; margin-bottom: 10px;">${itemsHtml}</ul>
+    <div style="font-weight: 800; font-size: 0.95rem; border-top: 1px solid var(--color-border); padding-top: 8px;">
+      Total: $${Number(p.total).toFixed(2)} MXN
+    </div>
+  `;
+}
+
 function abrirModalLealtad() {
   document.getElementById('loyalty-modal').classList.add('active');
 }
@@ -340,54 +411,73 @@ function cerrarModalLealtad() {
   document.getElementById('loyalty-modal').classList.remove('active');
 }
 
+function renderizarTarjetaSellos(cliente) {
+  document.getElementById('loyalty-client-name').textContent = `${cliente.nombre} (${cliente.telefono || AppState.telefonoLealtadActivo})`;
+
+  const grid = document.getElementById('stamp-grid-icons');
+  grid.innerHTML = '';
+
+  const sellosActuales = Number(cliente.sellos || 0);
+
+  for (let i = 1; i <= 6; i++) {
+    const stamp = document.createElement('div');
+    stamp.className = 'stamp-circle';
+
+    if (i <= sellosActuales) {
+      stamp.classList.add('stamped');
+    }
+
+    if (i === 6) {
+      stamp.classList.add('reward-stamp');
+      stamp.textContent = '🎁';
+      stamp.title = '¡6to Café Gratis!';
+    } else {
+      stamp.textContent = '☕';
+      stamp.title = `Sello ${i}`;
+    }
+
+    grid.appendChild(stamp);
+  }
+
+  const msgEl = document.getElementById('loyalty-status-msg');
+  const redeemContainer = document.getElementById('loyalty-redeem-container');
+
+  if (sellosActuales >= 6) {
+    msgEl.innerHTML = `🎉 <strong>¡Tienes ${sellosActuales} sellos! Ya puedes canjear tu café gratis en barra.</strong>`;
+    redeemContainer.style.display = 'block';
+  } else {
+    msgEl.textContent = `Llevas ${sellosActuales} de 6 sellos. Te faltan ${6 - sellosActuales} para tu bebida de cortesía.`;
+    redeemContainer.style.display = 'none';
+  }
+}
+
 async function consultarSellosCliente() {
   const phoneInput = document.getElementById('input-search-loyalty-phone');
-  const telefono = phoneInput.value.trim();
+  const telefono = phoneInput.value.replace(/\D/g, '');
 
-  if (!telefono || telefono.length < 10) {
-    alert('Ingresa un teléfono válido de 10 dígitos.');
+  if (telefono.length < 10) {
+    alert('Ingresa un número de teléfono válido de 10 dígitos (ej. 5512345678 o 5599887766).');
     return;
   }
 
+  AppState.telefonoLealtadActivo = telefono;
   const res = await API.consultarLealtad(telefono);
-  const cliente = res.cliente;
 
-  if (cliente) {
-    document.getElementById('loyalty-client-name').textContent = cliente.nombre || 'Estudiante FES C4';
-    
-    // Renderizamos los sellos visuales (1 al 6)
-    const grid = document.getElementById('stamp-grid-icons');
-    grid.innerHTML = '';
-
-    const sellosActuales = cliente.sellos || 0;
-
-    for (let i = 1; i <= 6; i++) {
-      const stamp = document.createElement('div');
-      stamp.className = 'stamp-circle';
-
-      if (i <= sellosActuales) {
-        stamp.classList.add('stamped');
-      }
-
-      if (i === 6) {
-        stamp.classList.add('reward-stamp');
-        stamp.textContent = '🎁';
-        stamp.title = '¡6to Café Gratis!';
-      } else {
-        stamp.textContent = '☕';
-        stamp.title = `Sello ${i}`;
-      }
-
-      grid.appendChild(stamp);
-    }
-
-    const msgEl = document.getElementById('loyalty-status-msg');
-    if (sellosActuales >= 6) {
-      msgEl.innerHTML = '🎉 <strong>¡Tienes 1 café de cortesía disponible para canjear en barra!</strong>';
-    } else {
-      msgEl.textContent = `¡Llevas ${sellosActuales} de 6 sellos! Te faltan ${6 - sellosActuales} para tu café gratis.`;
-    }
+  if (res.ok && res.cliente) {
+    renderizarTarjetaSellos(res.cliente);
   } else {
-    alert(res.mensaje || 'No encontramos registros con este número.');
+    alert(res.mensaje || 'Aún no hay sellos con este número. Se creará tu tarjeta en tu primer pedido.');
+  }
+}
+
+async function canjearPremioLealtad() {
+  if (!AppState.telefonoLealtadActivo) return;
+
+  const res = await API.canjearRecompensa(AppState.telefonoLealtadActivo);
+  if (res.ok) {
+    alert(res.mensaje || '¡Bebida de cortesía canjeada con éxito!');
+    await consultarSellosCliente();
+  } else {
+    alert(res.error || 'No se pudo canjear la recompensa.');
   }
 }

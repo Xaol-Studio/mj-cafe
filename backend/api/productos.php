@@ -1,50 +1,30 @@
 <?php
 /**
- * ==============================================================================
- * PROYECTO: SaaS MJ CAFÉ - FES Cuautitlán Campo 4
- * ARCHIVO: backend/api/productos.php
- * ==============================================================================
- * EJEMPLO DE REFERENCIA RESUELTO (GOLDEN PATTERN PARA EL EQUIPO)
- * 
- * Este archivo está 100% implementado para que sirva como plantilla de estudio:
- * - Demuestra cómo recibir peticiones HTTP GET.
- * - Muestra cómo usar sentencias preparadas con PDO (`prepare` y `execute`).
- * - Realiza un `INNER JOIN` entre la tabla `productos` y `categorias`.
- * - Devuelve una respuesta JSON tipada y formateada para el Frontend.
- * ==============================================================================
+ * Endpoint de catálogo de productos y categorías
+ * Ruta: GET /backend/api/productos.php
  */
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/database.php';
 
-// Si el navegador hace una petición pre-flight OPTIONS de CORS:
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     sendJsonResponse(200, ['status' => 'ok']);
 }
 
-// Únicamente permitimos el método GET en este endpoint
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     sendJsonResponse(405, [
         'ok' => false,
-        'error' => 'Método no permitido. Este endpoint solo acepta solicitudes GET.'
+        'error' => 'Método no permitido. Usa GET.'
     ]);
 }
 
 try {
     $pdo = Database::getConnection();
 
-    // Filtros opcionales enviados por la URL (query strings)
-    // Ejemplos:
-    //   /backend/api/productos.php
-    //   /backend/api/productos.php?categoria=1
-    //   /backend/api/productos.php?populares=1
     $categoriaId = isset($_GET['categoria']) ? (int)$_GET['categoria'] : null;
     $soloPopulares = isset($_GET['populares']) && $_GET['populares'] === '1';
 
-    // 1. Construcción dinámica de la consulta SQL con JOIN
-    // Explicación didáctica: Usamos alias (p para productos, c para categorias)
-    // para evitar colisiones de nombres de columna como id o nombre.
     $sql = "
         SELECT 
             p.id,
@@ -66,26 +46,21 @@ try {
 
     $params = [];
 
-    // Filtro por categoría específica
     if ($categoriaId !== null && $categoriaId > 0) {
         $sql .= " AND p.categoria_id = :categoria_id";
         $params[':categoria_id'] = $categoriaId;
     }
 
-    // Filtro por productos populares
     if ($soloPopulares) {
         $sql .= " AND p.es_popular = 1";
     }
 
-    // Ordenamos por categoría y luego por popularidad
     $sql .= " ORDER BY c.orden ASC, p.es_popular DESC, p.id ASC";
 
-    // 2. Preparación y ejecución de la consulta segura
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $productosRaw = $stmt->fetchAll();
 
-    // 3. Formateo y tipado de los datos antes de enviarlos al Frontend
     $productos = array_map(function (array $item): array {
         return [
             'id' => (int)$item['id'],
@@ -106,7 +81,6 @@ try {
         ];
     }, $productosRaw);
 
-    // 4. También consultamos las categorías activas para que el frontend arme los botones/tabs
     $stmtCat = $pdo->query("SELECT id, nombre, slug, icono FROM categorias WHERE activo = 1 ORDER BY orden ASC");
     $categorias = $stmtCat->fetchAll();
 
@@ -120,6 +94,6 @@ try {
 } catch (PDOException $e) {
     sendJsonResponse(500, [
         'ok' => false,
-        'error' => 'Error al consultar el catálogo de productos: ' . $e->getMessage()
+        'error' => 'Error al consultar productos: ' . $e->getMessage()
     ]);
 }

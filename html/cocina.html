@@ -22,20 +22,50 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
     }
     .kds-title {
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       font-weight: 800;
       color: #ffffff;
       display: flex;
       align-items: center;
       gap: 12px;
     }
+    .kds-summary-bar {
+      max-width: 1400px;
+      margin: 18px auto 0;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+    }
+    .kds-stat-card {
+      background-color: #231c18;
+      border: 1px solid #3d3029;
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .kds-stat-label {
+      font-size: 0.78rem;
+      color: #a99688;
+      font-weight: 600;
+    }
+    .kds-stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #ffdfba;
+    }
     .kds-columns {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 20px;
-      padding: 24px;
+      padding: 20px 24px 32px;
       max-width: 1400px;
       margin: 0 auto;
     }
@@ -45,7 +75,8 @@
       border: 1px solid #3d3029;
       display: flex;
       flex-direction: column;
-      max-height: calc(100vh - 140px);
+      min-height: 420px;
+      max-height: calc(100vh - 210px);
     }
     .kds-col-header {
       padding: 16px;
@@ -135,6 +166,9 @@
       .kds-columns {
         grid-template-columns: 1fr;
       }
+      .kds-col {
+        max-height: none;
+      }
     }
   </style>
 </head>
@@ -146,54 +180,60 @@
       <div>
         <div>MJ CAFÉ • Pantalla de Barista (KDS)</div>
         <div style="font-size: 0.75rem; font-weight: 500; color: #a99688;">
-          Pedidos express frente a FES C4 • Actualización en tiempo real
+          Comandas en tiempo real • Frente a FES Cuautitlán Campo 4
         </div>
       </div>
     </div>
 
-    <div style="display: flex; align-items: center; gap: 14px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
       <span id="kds-last-sync" style="font-size: 0.8rem; color: #a99688;">Sincronizado</span>
       <button id="btn-refresh-kds" class="btn btn-outline" style="background: #342a24; border-color: #55443a; color: #fff;">
-        🔄 Refrescar
+        🔄 Actualizar
       </button>
       <a href="index.html" class="btn btn-primary" style="background: var(--color-accent); color: #fff;">
-        Ir a la Tienda
+        ← Volver a la Tienda
       </a>
     </div>
   </header>
 
+  <section class="kds-summary-bar">
+    <div class="kds-stat-card">
+      <span class="kds-stat-label">Comandas en Cola</span>
+      <span class="kds-stat-value" id="stat-activos">0</span>
+    </div>
+    <div class="kds-stat-card">
+      <span class="kds-stat-label">Pedidos Entregados Hoy</span>
+      <span class="kds-stat-value" id="stat-entregados">0</span>
+    </div>
+    <div class="kds-stat-card">
+      <span class="kds-stat-label">Venta Acumulada del Turno</span>
+      <span class="kds-stat-value" id="stat-ingresos">$0.00 MXN</span>
+    </div>
+  </section>
+
   <main class="kds-columns">
-    <!-- COLUMNA 1: PENDIENTES / NUEVOS -->
     <div class="kds-col col-pendiente">
       <div class="kds-col-header">
         <span>⏳ Nuevos por Preparar</span>
         <span id="count-pendientes" class="cart-count" style="background: var(--color-warning);">0</span>
       </div>
-      <div class="kds-col-body" id="col-body-pendientes">
-        <!-- Tarjetas dinámicas -->
-      </div>
+      <div class="kds-col-body" id="col-body-pendientes"></div>
     </div>
 
-    <!-- COLUMNA 2: EN PREPARACIÓN -->
     <div class="kds-col col-preparando">
       <div class="kds-col-header">
         <span>🔥 En Máquina / Plancha</span>
         <span id="count-preparando" class="cart-count" style="background: var(--color-accent);">0</span>
       </div>
-      <div class="kds-col-body" id="col-body-preparando">
-        <!-- Tarjetas dinámicas -->
-      </div>
+      <div class="kds-col-body" id="col-body-preparando"></div>
     </div>
 
-    <!-- COLUMNA 3: LISTOS PARA RECOGER -->
     <div class="kds-col col-listo">
       <div class="kds-col-header">
         <span>✅ Listos en Barra</span>
         <span id="count-listo" class="cart-count" style="background: var(--color-success);">0</span>
       </div>
-      <div class="kds-col-body" id="col-body-listo">
-        <!-- Tarjetas dinámicas -->
-      </div>
+      <div class="kds-col-body" id="col-body-listo"></div>
     </div>
   </main>
 
@@ -203,6 +243,7 @@
     async function cargarPedidosKds() {
       const res = await API.obtenerPedidosCocina();
       const pedidos = res.pedidos || [];
+      const resumen = res.resumen || { total_pedidos: pedidos.length, ingresos_totales: 0, entregados: 0 };
 
       const colPendientes = document.getElementById('col-body-pendientes');
       const colPreparando = document.getElementById('col-body-preparando');
@@ -251,10 +292,10 @@
               <button class="btn btn-accent btn-action-state" data-id="${p.id}" data-state="preparando">Iniciar Preparación ▶</button>
             ` : ''}
             ${p.estado === 'preparando' ? `
-              <button class="btn btn-primary btn-action-state" style="background: var(--color-success);" data-id="${p.id}" data-state="listo_para_recoger">Listo en Barra ✓</button>
+              <button class="btn btn-primary btn-action-state" style="background: var(--color-success);" data-id="${p.id}" data-state="listo_para_recoger">Marcar Listo en Barra ✓</button>
             ` : ''}
             ${p.estado === 'listo_para_recoger' ? `
-              <button class="btn btn-outline btn-action-state" style="border-color: #665; color: #fff;" data-id="${p.id}" data-state="entregado">Marcar Entregado 🎉</button>
+              <button class="btn btn-outline btn-action-state" style="border-color: #665; color: #fff;" data-id="${p.id}" data-state="entregado">Entregar al Cliente 🎉</button>
             ` : ''}
           </div>
         `;
@@ -274,15 +315,18 @@
       document.getElementById('count-pendientes').textContent = cPendiente;
       document.getElementById('count-preparando').textContent = cPrep;
       document.getElementById('count-listo').textContent = cListo;
-      document.getElementById('kds-last-sync').textContent = 'Sync: ' + new Date().toLocaleTimeString();
 
-      // Listeners de cambio de estado
+      document.getElementById('stat-activos').textContent = pedidos.length;
+      document.getElementById('stat-entregados').textContent = resumen.entregados || 0;
+      document.getElementById('stat-ingresos').textContent = `$${Number(resumen.ingresos_totales || 0).toFixed(2)} MXN`;
+      document.getElementById('kds-last-sync').textContent = 'Actualizado: ' + new Date().toLocaleTimeString();
+
       document.querySelectorAll('.btn-action-state').forEach(b => {
         b.addEventListener('click', async (e) => {
-          const id = e.target.dataset.id;
-          const state = e.target.dataset.state;
-          e.target.disabled = true;
-          e.target.textContent = 'Actualizando...';
+          const id = e.currentTarget.dataset.id;
+          const state = e.currentTarget.dataset.state;
+          e.currentTarget.disabled = true;
+          e.currentTarget.textContent = 'Guardando...';
           await API.actualizarEstadoCocina(id, state);
           await cargarPedidosKds();
         });
@@ -291,8 +335,7 @@
 
     document.getElementById('btn-refresh-kds').addEventListener('click', cargarPedidosKds);
     cargarPedidosKds();
-    // Auto sync cada 15 segundos
-    setInterval(cargarPedidosKds, 15000);
+    setInterval(cargarPedidosKds, 10000);
   </script>
 </body>
 </html>

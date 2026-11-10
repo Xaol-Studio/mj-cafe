@@ -4,9 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MJ CAFÉ | Especialidad & Brunch - FES Cuautitlán Campo 4</title>
-  <meta name="description" content="Pide tu café de especialidad y alimentos para recoger entre clases en MJ Café, frente al acceso de FES Cuautitlán Campo 4. Sin filas, sin comisiones de apps.">
+  <meta name="description" content="Pide tu café de especialidad y alimentos para recoger entre clases en MJ Café, frente al acceso de FES Cuautitlán Campo 4.">
   
-  <!-- Tipografía Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
@@ -15,9 +14,7 @@
 </head>
 <body>
 
-  <!-- =========================================================================
-       CABECERA Y BARRA DE NAVEGACIÓN
-       ========================================================================= -->
+  <!-- CABECERA Y BARRA DE NAVEGACIÓN -->
   <header class="site-header">
     <div class="container nav-container">
       <div class="brand-wrapper">
@@ -29,17 +26,20 @@
       </div>
 
       <div class="nav-actions">
-        <!-- Indicador de conexión Backend SQL -->
         <div id="backend-status-badge" style="font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #e8f5e9; color: #2e7d32; display: flex; align-items: center; gap: 6px;">
           <span style="width: 8px; height: 8px; border-radius: 50%; background: #2e7d32;"></span>
-          <span id="backend-status-text">Detectando API...</span>
+          <span id="backend-status-text">Conectando...</span>
         </div>
 
-        <button id="btn-open-loyalty" class="btn btn-outline" title="Consultar tarjeta de sellos">
-          <span>🎟️ Club MJ (Sellos)</span>
+        <button id="btn-open-track" class="btn btn-outline" style="font-size: 0.85rem;" title="Rastrear estado de mi pedido">
+          <span>🔍 Mi Pedido</span>
         </button>
 
-        <a href="cocina.html" class="btn btn-outline" style="font-size: 0.85rem;" target="_blank" title="Abrir pantalla de cocina / barista">
+        <button id="btn-open-loyalty" class="btn btn-outline" style="font-size: 0.85rem;" title="Consultar tarjeta de sellos">
+          <span>🎟️ Club MJ</span>
+        </button>
+
+        <a href="cocina.html" class="btn btn-outline" style="font-size: 0.85rem;" title="Abrir pantalla de barista">
           <span>👨‍🍳 Cocina</span>
         </a>
 
@@ -51,9 +51,7 @@
     </div>
   </header>
 
-  <!-- =========================================================================
-       BANNER HERO - VALOR AGREGADO FES C4
-       ========================================================================= -->
+  <!-- BANNER HERO -->
   <section class="hero-section">
     <div class="container">
       <div class="hero-banner">
@@ -63,7 +61,7 @@
           </div>
           <h2 class="hero-title font-serif">Tu café de especialidad listo en el cambio de clase</h2>
           <p class="hero-desc">
-            Olvídate de esperar 15 minutos en fila. Ordena desde tu cel mientras termina tu clase en Campo 4 y recógelo caliente y listo sobre Av. Benito Juárez #1.
+            Olvídate de esperar 15 minutos en fila. Ordena desde tu celular mientras termina tu clase en Campo 4 y recógelo caliente y listo sobre Av. Benito Juárez #1.
           </p>
           <div class="hero-highlights">
             <div class="hero-highlight-item">
@@ -84,28 +82,27 @@
        FILTRO POR CATEGORÍAS
        ========================================================================= -->
   <main class="container">
-    <div class="categories-wrapper" id="categories-container">
-      <button class="category-tab active" data-category="all">
-        <span>✨ Todo el Menú</span>
-      </button>
-      <!-- Se pueblan dinámicamente desde la BD o mock -->
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin: 28px 0 18px;">
+      <div class="categories-wrapper" id="categories-container" style="margin: 0;">
+        <button class="category-tab active" data-category="all">
+          <span>✨ Todo el Menú</span>
+        </button>
+      </div>
+
+      <div style="min-width: 240px; flex-grow: 1; max-width: 320px;">
+        <input type="search" id="input-search-menu" class="form-control" placeholder="🔎 Buscar bebida, bagel o postre..." style="width: 100%; border-radius: 999px; padding: 9px 16px;">
+      </div>
     </div>
 
-    <!-- Encabezado de la sección del menú -->
     <div class="section-header">
       <h3 class="section-title font-serif" id="current-category-title">Todos los Favoritos</h3>
-      <span style="font-size: 0.88rem; color: var(--color-text-muted);" id="products-count-label">Cargando delicias...</span>
+      <span style="font-size: 0.88rem; color: var(--color-text-muted);" id="products-count-label">Cargando menú...</span>
     </div>
 
-    <!-- Grid de Productos -->
-    <div class="products-grid" id="products-grid">
-      <!-- Tarjetas insertadas por JavaScript -->
-    </div>
+    <div class="products-grid" id="products-grid"></div>
   </main>
 
-  <!-- =========================================================================
-       DRAWER / CARRITO LATERAL DE RECOLECCIÓN
-       ========================================================================= -->
+  <!-- DRAWER DEL CARRITO -->
   <div class="drawer-backdrop" id="cart-backdrop"></div>
   <aside class="cart-drawer" id="cart-drawer">
     <div class="drawer-header">
@@ -114,16 +111,13 @@
     </div>
 
     <div class="drawer-body">
-      <!-- Lista de artículos en el carrito -->
       <div id="cart-empty-message" style="text-align: center; padding: 40px 10px; color: var(--color-text-muted);">
         <p style="font-size: 3rem; margin-bottom: 10px;">☕</p>
         <p style="font-weight: 600;">Tu carrito está vacío</p>
         <p style="font-size: 0.85rem; margin-top: 6px;">Agrega un espresso, frappé o bagel para tu recolección.</p>
       </div>
 
-      <div class="cart-items-list" id="cart-items-container">
-        <!-- Renderizado dinámico -->
-      </div>
+      <div class="cart-items-list" id="cart-items-container"></div>
 
       <!-- Formulario de recolección -->
       <form class="drawer-form" id="checkout-form">
@@ -132,7 +126,7 @@
         </h4>
 
         <div class="form-group">
-          <label for="input-client-name">Tu Nombre Completo *</label>
+          <label for="input-client-name">Tu Nombre *</label>
           <input type="text" id="input-client-name" class="form-control" placeholder="Ej: Miguel Delgado" required>
         </div>
 
@@ -158,14 +152,14 @@
         <div class="form-group">
           <label for="select-payment-method">Método de Pago</label>
           <select id="select-payment-method" class="form-control">
-            <option value="efectivo_en_barra">💵 Efectivo exacto en barra al recoger</option>
+            <option value="efectivo_en_barra">💵 Efectivo en barra al recoger</option>
             <option value="transferencia_spei">📱 Transferencia SPEI / Dimo</option>
           </select>
         </div>
 
         <div class="form-group">
           <label for="input-order-notes">Notas para el Barista (Opcional)</label>
-          <input type="text" id="input-order-notes" class="form-control" placeholder="Ej: Deslactosada light, sin azúcar...">
+          <input type="text" id="input-order-notes" class="form-control" placeholder="Ej: Leche deslactosada, poco hielo...">
         </div>
       </form>
     </div>
@@ -181,9 +175,38 @@
     </div>
   </aside>
 
-  <!-- =========================================================================
-       MODAL: TARJETA DE SELLOS DIGITAL "CLUB MJ"
-       ========================================================================= -->
+  <!-- MODAL: RASTREAR MI PEDIDO POR FOLIO -->
+  <div class="modal-backdrop" id="track-modal">
+    <div class="modal-card">
+      <button class="drawer-close" id="btn-close-track" style="position: absolute; top: 16px; right: 16px;">&times;</button>
+
+      <div style="text-align: center; margin-bottom: 16px;">
+        <span style="font-size: 2.2rem;">🎟️</span>
+        <h3 class="font-serif" style="font-size: 1.45rem; margin-top: 4px;">Rastrear mi Pedido</h3>
+        <p style="font-size: 0.85rem; color: #2c1810;">
+          Ingresa tu folio para ver si tu pedido ya está listo para recoger en barra.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+        <input type="text" id="input-track-folio" class="form-control" placeholder="Ej: MJ-2026-101" style="flex-grow: 1; text-transform: uppercase;">
+        <button id="btn-search-folio" class="btn btn-primary" style="padding: 10px 16px;">Buscar</button>
+      </div>
+
+      <div id="track-result-box" style="display: none; background: #ffffff; color: #26211d; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <strong id="track-res-folio" style="font-size: 1.05rem; color: var(--color-primary);">MJ-2026-101</strong>
+          <span id="track-res-badge" class="badge-fes">LISTO</span>
+        </div>
+        <div id="track-res-client" style="font-size: 0.88rem; font-weight: 600; margin-bottom: 4px;"></div>
+        <div id="track-res-pickup" style="font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 10px;"></div>
+        <ul id="track-res-items" style="font-size: 0.85rem; padding-left: 18px; margin-bottom: 10px;"></ul>
+        <div id="track-res-total" style="font-weight: 800; font-size: 0.95rem; border-top: 1px solid var(--color-border); padding-top: 8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TARJETA DE SELLOS DIGITAL "CLUB MJ" -->
   <div class="modal-backdrop" id="loyalty-modal">
     <div class="modal-card">
       <button class="drawer-close" id="btn-close-loyalty" style="position: absolute; top: 16px; right: 16px;">&times;</button>
@@ -196,20 +219,18 @@
         </p>
       </div>
 
-      <!-- Buscador de teléfono -->
       <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-        <input type="tel" id="input-search-loyalty-phone" class="form-control" placeholder="Ingresa tus 10 dígitos (ej: 5512345678)" style="flex-grow: 1;">
+        <input type="tel" id="input-search-loyalty-phone" class="form-control" placeholder="Tus 10 dígitos (ej: 5512345678)" style="flex-grow: 1;">
         <button id="btn-search-loyalty" class="btn btn-accent" style="padding: 10px 16px;">Consultar</button>
       </div>
 
-      <!-- Visualizador de la tarjeta con 6 sellos -->
       <div class="stamp-card-ui" id="stamp-card-display">
         <div class="stamp-card-header">
           <div>
             <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #555555;">Tarjeta Digital</div>
             <strong id="loyalty-client-name" style="font-size: 1.1rem;">Alumno FES C4</strong>
           </div>
-          <span class="badge-fes" style="background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3);">UNAM</span>
+          <span class="badge-fes" style="background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3);">FES C4</span>
         </div>
 
         <div class="stamp-grid" id="stamp-grid-icons">
@@ -217,20 +238,24 @@
           <div class="stamp-circle stamped" title="Sello 2">☕</div>
           <div class="stamp-circle stamped" title="Sello 3">☕</div>
           <div class="stamp-circle stamped" title="Sello 4">☕</div>
-          <div class="stamp-circle" title="Sello 5">☕</div>
+          <div class="stamp-circle stamped" title="Sello 5">☕</div>
           <div class="stamp-circle reward-stamp" title="¡6to Café Gratis!">🎁</div>
         </div>
 
-        <div style="margin-top: 18px; text-align: center; font-size: 0.84rem; color: #ffdfba;" id="loyalty-status-msg">
-          ¡Llevas 4 de 6 sellos! Te faltan solo 2 para tu café de cortesía.
+        <div style="margin-top: 16px; text-align: center; font-size: 0.84rem; color: #ffdfba;" id="loyalty-status-msg">
+          ¡Llevas 5 de 6 sellos! Con tu siguiente pedido desbloqueas tu café gratis.
+        </div>
+
+        <div style="margin-top: 14px; text-align: center; display: none;" id="loyalty-redeem-container">
+          <button id="btn-redeem-reward" class="btn btn-accent" style="width: 100%; font-weight: 700;">
+            🎁 Canjear Café de Cortesía Ahora
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- =========================================================================
-       MODAL: CONFIRMACIÓN DE PEDIDO
-       ========================================================================= -->
+  <!-- MODAL: CONFIRMACIÓN DE PEDIDO -->
   <div class="modal-backdrop" id="confirmation-modal">
     <div class="modal-card" style="text-align: center;">
 <div style="font-size: 3.5rem; margin-bottom: 10px;">
@@ -249,21 +274,25 @@
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 10px;">
-        <button id="btn-close-confirmation" class="btn btn-primary" style="width: 100%;">Entendido, ¡gracias!</button>
+        <a id="btn-whatsapp-order" href="#" target="_blank" rel="noopener" class="btn btn-accent" style="width: 100%; background: #25D366; color: #fff;">
+          📲 Enviar Comanda por WhatsApp (Opcional)
+        </a>
+        <a href="cocina.html" class="btn btn-outline" style="width: 100%;">
+          👨‍🍳 Ver en Pantalla de Cocina (KDS)
+        </a>
+        <button id="btn-close-confirmation" class="btn btn-primary" style="width: 100%;">Listo, volver al menú</button>
       </div>
     </div>
   </div>
 
-  <!-- =========================================================================
-       FOOTER
-       ========================================================================= -->
+  <!-- FOOTER -->
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
           <h3 class="font-serif">MJ CAFÉ</h3>
           <p>
-            Café de especialidad, bebidas artesanales y alimentos frescos diseñados para la comunidad estudiantil y docente de FES Cuautitlán Campo 4.
+            Café de especialidad, bebidas artesanales y alimentos frescos para la comunidad de FES Cuautitlán Campo 4.
           </p>
           <p style="margin-top: 10px; font-size: 0.82rem; color: #ffdfba;">
             📍 Av. Benito Juárez #1, San Sebastián Xhala, Cuautitlán Izcalli, Edo. Méx.
@@ -280,18 +309,18 @@
         </div>
 
         <div class="footer-col">
-          <h4>Desarrollado Por</h4>
+          <h4>Créditos</h4>
           <ul class="footer-links">
-            <li><strong style="color: #fff;">XAOL Studio</strong></li>
-            <li>Backend: @iamhuitron & @GorchRosas</li>
-            <li>SaaS para Negocios Locales</li>
+            <li><strong style="color: #fff;">Informática — FES Cuautitlán UNAM</strong></li>
+            <li>Ian Miguel Delgado Huitron (@iamhuitron)</li>
+            <li>Jorge Alberto Barrios Rosas (@GorchRosas)</li>
           </ul>
         </div>
       </div>
 
       <div class="footer-bottom">
-        <div>&copy; 2026 MJ CAFÉ • Desarrollado por XAOL Studio</div>
-        <div>Proyecto Universitario & SaaS Comercial</div>
+        <div>&copy; 2026 MJ CAFÉ • San Sebastián Xhala, Cuautitlán Izcalli</div>
+        <div>Sistema Web de Pedidos & Lealtad</div>
       </div>
     </div>
   </footer>

@@ -1,15 +1,9 @@
 <?php
 /**
- * ==============================================================================
- * PROYECTO: SaaS MJ CAFÉ - FES Cuautitlán Campo 4
- * ARCHIVO: backend/api/cocina.php
- * ==============================================================================
- * API DE PANTALLA DE COCINA / BARISTA (KITCHEN DISPLAY SYSTEM - KDS)
- * 
- * Permite al barista de MJ Café:
- * - Ver en tiempo real los pedidos entrantes para recolectar entre clases.
- * - Cambiar el estado del pedido: pendiente -> preparando -> listo_para_recoger -> entregado.
- * ==============================================================================
+ * Endpoint para la pantalla de barista / cocina (KDS) y corte de caja básico
+ * Rutas:
+ *   GET  /backend/api/cocina.php
+ *   POST /backend/api/cocina.php
  */
 
 declare(strict_types=1);
@@ -26,7 +20,6 @@ if ($method === 'GET') {
     try {
         $pdo = Database::getConnection();
 
-        // Obtenemos los pedidos activos (que no han sido entregados ni cancelados)
         $sql = "
             SELECT 
                 p.id,
@@ -54,7 +47,6 @@ if ($method === 'GET') {
         $stmt = $pdo->query($sql);
         $pedidos = $stmt->fetchAll();
 
-        // Por cada pedido, consultamos sus productos
         $stmtDetalles = $pdo->prepare("
             SELECT 
                 d.id,
@@ -73,9 +65,28 @@ if ($method === 'GET') {
             $pedido['items'] = $stmtDetalles->fetchAll();
         }
 
+        // Resumen rápido del día (ventas y total de pedidos)
+        $stmtResumen = $pdo->query("
+            SELECT 
+                COUNT(*) AS total_pedidos,
+                COALESCE(SUM(CASE WHEN estado != 'cancelado' THEN total ELSE 0 END), 0) AS ingresos_totales,
+                COALESCE(SUM(CASE WHEN estado = 'entregado' THEN 1 ELSE 0 END), 0) AS entregados
+            FROM pedidos
+        ");
+        $resumen = $stmtResumen->fetch() ?: [
+            'total_pedidos' => 0,
+            'ingresos_totales' => 0,
+            'entregados' => 0
+        ];
+
         sendJsonResponse(200, [
             'ok' => true,
             'pedidos' => $pedidos,
+            'resumen' => [
+                'total_pedidos' => (int)$resumen['total_pedidos'],
+                'ingresos_totales' => (float)$resumen['ingresos_totales'],
+                'entregados' => (int)$resumen['entregados']
+            ],
             'timestamp' => date('c')
         ]);
 
@@ -84,12 +95,8 @@ if ($method === 'GET') {
     }
 
 } elseif ($method === 'POST') {
-    // -------------------------------------------------------------------------
-    // ACTUALIZACIÓN DE ESTADO DEL PEDIDO
-    // Espera JSON: {"pedido_id": 1, "nuevo_estado": "preparando"}
-    // -------------------------------------------------------------------------
     $rawInput = file_get_contents('php://input');
-    $data = json_decode($rawInput, true);
+    $data = json_decode($rawInput ?: '', true);
 
     $pedidoId = (int)($data['pedido_id'] ?? 0);
     $nuevoEstado = trim((string)($data['nuevo_estado'] ?? ''));
@@ -99,7 +106,7 @@ if ($method === 'GET') {
     if ($pedidoId <= 0 || !in_array($nuevoEstado, $estadosValidos, true)) {
         sendJsonResponse(422, [
             'ok' => false,
-            'error' => 'Datos inválidos. Debes especificar un pedido_id válido y un estado permitido.'
+            'error' => 'Datos inválidos para actualizar el pedido.'
         ]);
     }
 
@@ -117,7 +124,7 @@ if ($method === 'GET') {
 
         sendJsonResponse(200, [
             'ok' => true,
-            'mensaje' => "Estado del pedido #{$pedidoId} actualizado a: {$nuevoEstado}."
+            'mensaje' => "Pedido #{$pedidoId} actualizado a {$nuevoEstado}."
         ]);
 
     } catch (PDOException $e) {
