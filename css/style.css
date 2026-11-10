@@ -723,6 +723,10 @@ button {
   border-radius: var(--radius-lg);
   max-width: 480px;
   width: 100%;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 30px;
   position: relative;
   box-shadow: var(--shadow-lg);
@@ -841,28 +845,437 @@ button {
 }
 
 /* --------------------------------------------------------------------------
+   BARRA DE FILTROS & BUSCADOR
+   -------------------------------------------------------------------------- */
+.menu-filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 28px 0 18px;
+}
+
+.menu-search-box {
+  min-width: 240px;
+  flex-grow: 1;
+  max-width: 320px;
+}
+
+.menu-search-box input {
+  width: 100%;
+  border-radius: var(--radius-full);
+  padding: 10px 18px;
+}
+
+/* --------------------------------------------------------------------------
+   BARRA DE NAVEGACIÓN MÓVIL INFERIOR (Dock)
+   -------------------------------------------------------------------------- */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background-color: rgba(28, 19, 14, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(200, 157, 102, 0.25);
+  z-index: 99;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
+}
+
+.mob-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: #c7b9ab;
+  background: none;
+  border: none;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  min-width: 58px;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mob-nav-btn:active,
+.mob-nav-btn.active {
+  color: #ffd166;
+}
+
+.mob-nav-btn.active .mob-nav-icon {
+  transform: scale(1.12);
+}
+
+.mob-nav-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.mob-nav-icon-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.mob-nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background-color: var(--color-accent);
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.mob-nav-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* --------------------------------------------------------------------------
+   BARRA FLOTANTE DE ACCIÓN RÁPIDA (MÓVIL)
+   -------------------------------------------------------------------------- */
+.mobile-floating-cart {
+  display: none;
+  position: fixed;
+  bottom: 74px;
+  left: 12px;
+  right: 12px;
+  z-index: 98;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-floating-cart.active {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.btn-floating-cart {
+  width: 100%;
+  background: linear-gradient(135deg, #c89d66, #9e7542);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-md);
+  padding: 13px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.btn-floating-cart:active {
+  transform: scale(0.98);
+}
+
+.floating-cart-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.floating-cart-badge {
+  background-color: #2c1810;
+  color: #ffd166;
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.floating-cart-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-weight: 800;
+}
+
+.floating-cart-arrow {
+  font-size: 1.1rem;
+}
+
+/* --------------------------------------------------------------------------
    RESPONSIVE DESIGN (Móvil FES C4)
    -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
-  .hero-banner {
-    padding: 24px;
+  body {
+    padding-bottom: 76px; /* Espacio para el Dock inferior */
   }
-  
-  .hero-title {
-    font-size: 1.75rem;
+
+  .site-header {
+    height: 62px;
   }
-  
-  .footer-grid {
-    grid-template-columns: 1fr;
-    gap: 30px;
+
+  .nav-container {
+    padding: 0 14px;
   }
-  
+
+  .brand-logo-badge {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+    border-radius: var(--radius-sm);
+  }
+
+  .brand-info h1 {
+    font-size: 1.05rem;
+    gap: 6px;
+  }
+
+  .brand-info p {
+    font-size: 0.72rem;
+  }
+
+  .badge-fes {
+    font-size: 0.62rem;
+    padding: 2px 6px;
+  }
+
+  #backend-status-badge {
+    padding: 4px 6px !important;
+  }
+
+  #backend-status-text {
+    display: none;
+  }
+
+  .nav-actions {
+    gap: 8px;
+  }
+
   .nav-actions .btn-outline {
     display: none;
   }
-  
+
+  .btn-cart {
+    padding: 7px 12px;
+    font-size: 0.82rem;
+  }
+
+  .mobile-bottom-nav {
+    display: flex;
+  }
+
+  .mobile-floating-cart {
+    display: block;
+  }
+
+  /* Filtros y Buscador */
+  .menu-filters-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin: 18px 0 14px;
+  }
+
+  .menu-search-box {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .menu-search-box input {
+    font-size: 16px !important; /* Evita auto-zoom en iOS Safari */
+    padding: 11px 16px !important;
+  }
+
+  .categories-wrapper {
+    margin: 0;
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    gap: 8px;
+  }
+
+  .categories-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+
+  .category-tab {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 8px 14px;
+    font-size: 0.82rem;
+  }
+
+  /* Hero Banner */
+  .hero-section {
+    padding: 20px 0 14px;
+  }
+
+  .hero-banner {
+    padding: 22px 18px;
+    border-radius: var(--radius-md);
+  }
+
+  .hero-tag span {
+    font-size: 0.74rem;
+    padding: 4px 10px;
+  }
+
+  .hero-title {
+    font-size: 1.5rem;
+    line-height: 1.25;
+    margin: 10px 0 12px;
+  }
+
+  .hero-desc {
+    font-size: 0.88rem;
+    line-height: 1.45;
+    margin-bottom: 18px;
+  }
+
+  .hero-highlights {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .hero-highlight-item {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+  }
+
+  /* Grid de productos */
+  .products-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .product-image-container {
+    height: 180px;
+  }
+
+  .product-body {
+    padding: 16px;
+  }
+
+  .product-title {
+    font-size: 1.15rem;
+  }
+
+  .btn-add-cart {
+    padding: 10px 18px;
+    font-size: 0.92rem;
+  }
+
+  /* Drawer del Carrito */
   .cart-drawer {
     max-width: 100%;
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+  }
+
+  .drawer-header {
+    padding: 16px 18px;
+  }
+
+  .drawer-body {
+    padding: 16px 18px;
+  }
+
+  .drawer-footer {
+    padding: 16px 18px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .cart-item-img {
+    width: 60px;
+    height: 60px;
+  }
+
+  .btn-qty {
+    width: 36px;
+    height: 36px;
+    font-size: 1.15rem;
+  }
+
+  .form-control {
+    font-size: 16px !important; /* Vital para que iOS Safari no haga zoom brusco */
+    padding: 11px 14px;
+  }
+
+  /* Modales */
+  .modal-backdrop {
+    padding: 10px;
+    align-items: center;
+  }
+
+  .modal-card {
+    padding: 22px 16px;
+    width: 100%;
+    max-height: 88dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-md);
+  }
+
+  .stamp-grid {
+    gap: 8px;
+  }
+
+  .stamp-circle {
+    font-size: 1.25rem;
+  }
+
+  /* Footer */
+  .site-footer {
+    padding: 36px 0 24px;
+    margin-top: 40px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-info p {
+    display: none;
+  }
+  .hero-title {
+    font-size: 1.35rem;
+  }
+  .product-image-container {
+    height: 170px;
   }
 }
 

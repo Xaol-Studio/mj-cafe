@@ -63,6 +63,31 @@ function inicializarEventos() {
 
   // Envío del pedido
   document.getElementById('btn-submit-order').addEventListener('click', procesarEnvioPedido);
+
+  // Móvil: Barra de navegación inferior (Dock)
+  const mobNavMenu = document.getElementById('mob-nav-menu');
+  const mobNavTrack = document.getElementById('mob-nav-track');
+  const mobNavLoyalty = document.getElementById('mob-nav-loyalty');
+  const mobNavCart = document.getElementById('mob-nav-cart');
+  const btnFloatingCart = document.getElementById('btn-floating-cart-action');
+
+  if (mobNavMenu) {
+    mobNavMenu.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  if (mobNavTrack && trackModal) {
+    mobNavTrack.addEventListener('click', () => trackModal.classList.add('active'));
+  }
+  if (mobNavLoyalty) {
+    mobNavLoyalty.addEventListener('click', abrirModalLealtad);
+  }
+  if (mobNavCart) {
+    mobNavCart.addEventListener('click', abrirCarrito);
+  }
+  if (btnFloatingCart) {
+    btnFloatingCart.addEventListener('click', abrirCarrito);
+  }
 }
 
 async function cargarMenu(categoriaId = null) {
@@ -219,20 +244,31 @@ function actualizarCarritoUI() {
   const counterEl = document.getElementById('cart-counter');
   const btnSubmit = document.getElementById('btn-submit-order');
 
+  // Elementos móviles
+  const mobBadge = document.getElementById('mob-cart-badge');
+  const floatingCount = document.getElementById('floating-cart-count');
+  const floatingTotal = document.getElementById('floating-cart-total');
+  const floatingBar = document.getElementById('mobile-floating-cart');
+
   container.innerHTML = '';
 
   const totalItems = AppState.carrito.reduce((sum, item) => sum + item.cantidad, 0);
   counterEl.textContent = totalItems;
+  if (mobBadge) mobBadge.textContent = totalItems;
+  if (floatingCount) floatingCount.textContent = totalItems;
 
   if (AppState.carrito.length === 0) {
     emptyMsg.style.display = 'block';
     totalAmountEl.textContent = '$0.00 MXN';
+    if (floatingTotal) floatingTotal.textContent = '$0.00 MXN';
     btnSubmit.disabled = true;
+    if (floatingBar) floatingBar.classList.remove('active');
     return;
   }
 
   emptyMsg.style.display = 'none';
   btnSubmit.disabled = false;
+  if (floatingBar) floatingBar.classList.add('active');
 
   let granTotal = 0;
 
@@ -271,6 +307,7 @@ function actualizarCarritoUI() {
   });
 
   totalAmountEl.textContent = `$${granTotal.toFixed(2)} MXN`;
+  if (floatingTotal) floatingTotal.textContent = `$${granTotal.toFixed(2)} MXN`;
 }
 
 function modificarCantidad(productoId, delta) {
@@ -342,7 +379,10 @@ async function procesarEnvioPedido() {
     document.getElementById('confirmed-folio').textContent = folio;
     document.getElementById('confirmed-pickup-time').textContent = `Recolección: ${payload.hora_recoleccion}`;
     document.getElementById('confirmed-total').textContent = `Total: $${total} MXN`;
-    document.getElementById('confirmed-stamps').textContent = `🎟️ Club MJ: Ahora tienes ${sellos} de 6 sellos acumulados`;
+    const elStamps = document.getElementById('confirmed-stamps');
+    if (elStamps) {
+      elStamps.textContent = `🎟️ Club MJ: Ahora tienes ${sellos} de 6 sellos acumulados`;
+    }
 
     // Armar mensaje opcional de WhatsApp
     const resumenItems = payload.items.map(i => `• ${i.cantidad}x ${i.nombre}${i.personalizaciones ? ` (${i.personalizaciones})` : ''}`).join('\n');

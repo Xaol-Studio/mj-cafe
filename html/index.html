@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1c130e">
   <title>MJ CAFÉ | Especialidad & Brunch - FES Cuautitlán Campo 4</title>
   <meta name="description" content="Pide tu café de especialidad y alimentos para recoger entre clases en MJ Café, frente al acceso de FES Cuautitlán Campo 4.">
   
@@ -82,15 +83,15 @@
        FILTRO POR CATEGORÍAS
        ========================================================================= -->
   <main class="container">
-    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin: 28px 0 18px;">
-      <div class="categories-wrapper" id="categories-container" style="margin: 0;">
+    <div class="menu-filters-bar">
+      <div class="menu-search-box">
+        <input type="search" id="input-search-menu" class="form-control" placeholder="🔎 Buscar bebida, bagel o postre...">
+      </div>
+
+      <div class="categories-wrapper" id="categories-container">
         <button class="category-tab active" data-category="all">
           <span>✨ Todo el Menú</span>
         </button>
-      </div>
-
-      <div style="min-width: 240px; flex-grow: 1; max-width: 320px;">
-        <input type="search" id="input-search-menu" class="form-control" placeholder="🔎 Buscar bebida, bagel o postre..." style="width: 100%; border-radius: 999px; padding: 9px 16px;">
       </div>
     </div>
 
@@ -271,6 +272,7 @@
         <div id="confirmed-folio" style="font-size: 1.8rem; font-weight: 800; color: #ffd166; letter-spacing: 0.05em; margin: 4px 0;">MJ-2026-000</div>
         <div id="confirmed-pickup-time" style="font-size: 0.88rem; color: var(--color-accent); font-weight: 600;">Hora estimada: En 10 minutos</div>
         <div id="confirmed-total" style="font-size: 1rem; font-weight: 700; color: #ffffff; margin-top: 6px;">Total: $0.00 MXN</div>
+        <div id="confirmed-stamps" style="font-size: 0.82rem; color: #ffdfba; font-weight: 600; margin-top: 6px;">🎟️ Club MJ: Sellos actualizados</div>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -324,6 +326,47 @@
       </div>
     </div>
   </footer>
+
+  <!-- BARRA FLOTANTE DE ACCIÓN RÁPIDA (MÓVIL) -->
+  <div class="mobile-floating-cart" id="mobile-floating-cart">
+    <button class="btn-floating-cart" id="btn-floating-cart-action">
+      <div class="floating-cart-left">
+        <span class="floating-cart-badge" id="floating-cart-count">0</span>
+        <span class="floating-cart-label">Ver Pedido</span>
+      </div>
+      <div class="floating-cart-right">
+        <span id="floating-cart-total">$0.00 MXN</span>
+        <span class="floating-cart-arrow">→</span>
+      </div>
+    </button>
+  </div>
+
+  <!-- BARRA DE NAVEGACIÓN MÓVIL INFERIOR (Dock) -->
+  <nav class="mobile-bottom-nav" aria-label="Navegación móvil">
+    <button class="mob-nav-btn active" id="mob-nav-menu" title="Ver Menú">
+      <span class="mob-nav-icon">☕</span>
+      <span class="mob-nav-label">Menú</span>
+    </button>
+    <button class="mob-nav-btn" id="mob-nav-track" title="Rastrear Pedido">
+      <span class="mob-nav-icon">🔍</span>
+      <span class="mob-nav-label">Mi Pedido</span>
+    </button>
+    <button class="mob-nav-btn" id="mob-nav-loyalty" title="Club MJ Lealtad">
+      <span class="mob-nav-icon">🎟️</span>
+      <span class="mob-nav-label">Club MJ</span>
+    </button>
+    <a href="cocina.html" class="mob-nav-btn" title="Pantalla Barista Cocina">
+      <span class="mob-nav-icon">👨‍🍳</span>
+      <span class="mob-nav-label">Cocina</span>
+    </a>
+    <button class="mob-nav-btn" id="mob-nav-cart" title="Ver Carrito">
+      <span class="mob-nav-icon-wrapper">
+        <span class="mob-nav-icon">🛒</span>
+        <span id="mob-cart-badge" class="mob-nav-badge">0</span>
+      </span>
+      <span class="mob-nav-label">Carrito</span>
+    </button>
+  </nav>
 
   <script type="module" src="../js/main.js"></script>
 </body>
