@@ -3,23 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#1a1513">
-  <title>Pantalla de Barista / Cocina | MJ CAFÉ</title>
+  <meta name="theme-color" content="#0D0C0A">
+  <title>Terminal de Barista (KDS) | MJ CAFÉ</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/style.css">
   
   <style>
     body {
-      background-color: #1a1513;
-      color: #ede5dd;
+      background-color: var(--color-bg);
+      color: var(--color-text-body);
     }
     .kds-header {
-      background-color: #261e1a;
-      border-bottom: 2px solid #3d3029;
-      padding: 16px 24px;
+      background-color: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      padding: 14px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -27,24 +27,25 @@
       gap: 12px;
     }
     .kds-title {
+      font-family: var(--font-serif);
       font-size: 1.25rem;
-      font-weight: 800;
-      color: #ffffff;
+      font-weight: 700;
+      color: var(--color-text);
       display: flex;
       align-items: center;
       gap: 12px;
     }
     .kds-summary-bar {
       max-width: 1400px;
-      margin: 18px auto 0;
+      margin: 16px auto 0;
       padding: 0 24px;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 14px;
+      gap: 12px;
     }
     .kds-stat-card {
-      background-color: #231c18;
-      border: 1px solid #3d3029;
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
       border-radius: var(--radius-sm);
       padding: 12px 16px;
       display: flex;
@@ -53,123 +54,125 @@
     }
     .kds-stat-label {
       font-size: 0.78rem;
-      color: #a99688;
+      color: var(--color-text-muted);
       font-weight: 600;
     }
     .kds-stat-value {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 1.15rem;
       font-weight: 700;
-      color: #ffdfba;
+      color: var(--color-accent);
     }
     .kds-columns {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      padding: 20px 24px 32px;
+      gap: 18px;
+      padding: 18px 24px 32px;
       max-width: 1400px;
       margin: 0 auto;
     }
     .kds-col {
-      background-color: #231c18;
-      border-radius: var(--radius-md);
-      border: 1px solid #3d3029;
+      background-color: var(--color-surface);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
       display: flex;
       flex-direction: column;
       min-height: 420px;
-      max-height: calc(100vh - 210px);
+      max-height: calc(100vh - 190px);
     }
     .kds-col-header {
-      padding: 16px;
+      padding: 14px 16px;
       font-weight: 700;
-      font-size: 1rem;
-      border-bottom: 2px solid #3d3029;
+      font-size: 0.95rem;
+      color: var(--color-text);
+      border-bottom: 1px solid var(--color-border);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .col-pendiente { border-top: 4px solid var(--color-warning); }
-    .col-preparando { border-top: 4px solid var(--color-accent); }
-    .col-listo { border-top: 4px solid var(--color-success); }
+    .col-pendiente { border-top: 3px solid var(--color-warning-text); }
+    .col-preparando { border-top: 3px solid var(--color-accent); }
+    .col-listo { border-top: 3px solid var(--color-success-text); }
     
     .kds-col-body {
-      padding: 16px;
+      padding: 14px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
     }
     .order-card {
-      background-color: #2f2520;
+      background-color: var(--color-surface-elevated);
       border-radius: var(--radius-sm);
-      border: 1px solid #473830;
-      padding: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      border: 1px solid var(--color-border);
+      padding: 14px;
+      box-shadow: var(--shadow-subtle);
     }
     .order-card-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 10px;
-      border-bottom: 1px dashed #4a3b33;
+      margin-bottom: 8px;
+      border-bottom: 1px dashed var(--color-border);
       padding-bottom: 8px;
     }
     .order-folio {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.1rem;
+      font-family: var(--font-mono);
+      font-size: 1.05rem;
       font-weight: 700;
-      color: #ffdfba;
+      color: var(--color-accent);
     }
     .order-client {
       font-weight: 600;
-      font-size: 0.95rem;
-      color: #ffffff;
+      font-size: 0.88rem;
+      color: var(--color-text);
     }
     .order-time-badge {
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 4px;
-      background-color: #4a3428;
-      color: #ffcb8c;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: var(--radius-sm);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-body);
     }
     .order-items-list {
       list-style: none;
-      margin: 12px 0;
+      margin: 10px 0;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
     }
     .order-item-row {
-      font-size: 0.88rem;
+      font-size: 0.85rem;
+      color: var(--color-text);
       display: flex;
       justify-content: space-between;
     }
     .order-item-custom {
-      font-size: 0.78rem;
-      color: #d1b49a;
-      font-style: italic;
-      padding-left: 12px;
+      font-size: 0.76rem;
+      color: var(--color-accent);
+      padding-left: 10px;
     }
     .order-actions {
       display: flex;
       gap: 8px;
-      margin-top: 12px;
+      margin-top: 10px;
     }
     .order-actions button {
       flex: 1;
-      padding: 10px;
-      font-size: 0.85rem;
-      font-weight: 700;
+      padding: 9px;
+      font-size: 0.82rem;
+      font-weight: 600;
       border-radius: var(--radius-sm);
     }
     
-    /* Pestañas de filtrado para baristas en móvil */
     .kds-mobile-tabs {
       display: none;
-      background-color: #231c18;
-      border-bottom: 1px solid #3d3029;
-      padding: 10px 16px;
+      background-color: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      padding: 8px 16px;
       gap: 8px;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
@@ -184,20 +187,21 @@
     .kds-tab-btn {
       flex-shrink: 0;
       white-space: nowrap;
-      background: #2f2520;
-      color: #c7b9ab;
-      border: 1px solid #4a3b33;
-      padding: 8px 14px;
+      background: var(--color-surface-elevated);
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border);
+      padding: 6px 14px;
       border-radius: var(--radius-full);
-      font-size: 0.82rem;
-      font-weight: 700;
+      font-size: 0.78rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: var(--transition-fast);
     }
     .kds-tab-btn.active {
       background: var(--color-accent);
-      color: #ffffff;
+      color: #0D0C0A;
       border-color: var(--color-accent);
+      font-weight: 700;
     }
 
     @media (max-width: 900px) {
@@ -208,10 +212,10 @@
         padding: 12px 16px;
         flex-direction: column;
         align-items: stretch;
-        gap: 12px;
+        gap: 10px;
       }
       .kds-title {
-        font-size: 1.1rem;
+        font-size: 1.05rem;
       }
       .kds-header-actions {
         display: flex;
@@ -222,8 +226,8 @@
       }
       .kds-summary-bar {
         padding: 0 16px;
-        margin-top: 14px;
-        gap: 10px;
+        margin-top: 12px;
+        gap: 8px;
         grid-template-columns: 1fr 1fr;
       }
       .kds-summary-bar .kds-stat-card:last-child {
@@ -231,22 +235,14 @@
       }
       .kds-columns {
         grid-template-columns: 1fr;
-        padding: 16px;
-        gap: 16px;
+        padding: 14px 16px;
+        gap: 14px;
       }
       .kds-col {
         max-height: none;
         min-height: auto;
       }
-      .order-card {
-        padding: 14px;
-      }
-      .order-actions button {
-        padding: 12px;
-        font-size: 0.88rem;
-      }
       
-      /* Filtrado condicional de columnas en vista móvil */
       .kds-columns[data-filter="col-pendiente"] .kds-col:not(.col-pendiente) {
         display: none !important;
       }
@@ -263,22 +259,21 @@
 
   <header class="kds-header">
     <div class="kds-title">
-      <span style="font-size: 1.6rem;">☕</span>
       <div>
-        <div>MJ CAFÉ • Pantalla de Barista (KDS)</div>
-        <div style="font-size: 0.75rem; font-weight: 500; color: #a99688;">
-          Comandas en tiempo real • Frente a FES Cuautitlán Campo 4
+        <div>MJ CAFÉ • Terminal de Cocina (KDS)</div>
+        <div style="font-size: 0.72rem; font-family: var(--font-sans); font-weight: 500; color: var(--color-text-muted);">
+          Gestión de comandas en tiempo real • FES Cuautitlán Campo 4
         </div>
       </div>
     </div>
 
     <div class="kds-header-actions">
-      <span id="kds-last-sync" style="font-size: 0.8rem; color: #a99688;">Sincronizado</span>
-      <button id="btn-refresh-kds" class="btn btn-outline" style="background: #342a24; border-color: #55443a; color: #fff;">
-        🔄 Actualizar
+      <span id="kds-last-sync" style="font-size: 0.78rem; font-family: var(--font-mono); color: var(--color-text-muted);">Sincronizando...</span>
+      <button id="btn-refresh-kds" class="btn btn-outline" style="padding: 7px 12px; font-size: 0.8rem;">
+        Actualizar
       </button>
-      <a href="index.html" class="btn btn-primary" style="background: var(--color-accent); color: #fff;">
-        ← Volver a la Tienda
+      <a href="index.html" class="btn btn-primary" style="padding: 7px 14px; font-size: 0.8rem;">
+        Volver a la Tienda
       </a>
     </div>
   </header>
@@ -289,11 +284,11 @@
       <span class="kds-stat-value" id="stat-activos">0</span>
     </div>
     <div class="kds-stat-card">
-      <span class="kds-stat-label">Pedidos Entregados Hoy</span>
+      <span class="kds-stat-label">Entregados Hoy</span>
       <span class="kds-stat-value" id="stat-entregados">0</span>
     </div>
     <div class="kds-stat-card">
-      <span class="kds-stat-label">Venta Acumulada del Turno</span>
+      <span class="kds-stat-label">Venta del Turno</span>
       <span class="kds-stat-value" id="stat-ingresos">$0.00 MXN</span>
     </div>
   </section>
@@ -301,23 +296,23 @@
   <!-- Pestañas móviles de filtro para baristas -->
   <nav class="kds-mobile-tabs" id="kds-mobile-tabs" aria-label="Filtro de comandas">
     <button class="kds-tab-btn active" data-col="all">Todos (<span id="mob-stat-total">0</span>)</button>
-    <button class="kds-tab-btn" data-col="col-pendiente">⏳ Nuevos (<span id="mob-count-pendientes">0</span>)</button>
-    <button class="kds-tab-btn" data-col="col-preparando">🔥 En Barra (<span id="mob-count-preparando">0</span>)</button>
-    <button class="kds-tab-btn" data-col="col-listo">✅ Listos (<span id="mob-count-listo">0</span>)</button>
+    <button class="kds-tab-btn" data-col="col-pendiente">Nuevos (<span id="mob-count-pendientes">0</span>)</button>
+    <button class="kds-tab-btn" data-col="col-preparando">En Preparación (<span id="mob-count-preparando">0</span>)</button>
+    <button class="kds-tab-btn" data-col="col-listo">Listos (<span id="mob-count-listo">0</span>)</button>
   </nav>
 
   <main class="kds-columns">
     <div class="kds-col col-pendiente">
       <div class="kds-col-header">
-        <span>⏳ Nuevos por Preparar</span>
-        <span id="count-pendientes" class="cart-count" style="background: var(--color-warning);">0</span>
+        <span>Nuevos por Preparar</span>
+        <span id="count-pendientes" class="cart-count" style="background: var(--color-warning-text);">0</span>
       </div>
       <div class="kds-col-body" id="col-body-pendientes"></div>
     </div>
 
     <div class="kds-col col-preparando">
       <div class="kds-col-header">
-        <span>🔥 En Máquina / Plancha</span>
+        <span>En Barra / Preparación</span>
         <span id="count-preparando" class="cart-count" style="background: var(--color-accent);">0</span>
       </div>
       <div class="kds-col-body" id="col-body-preparando"></div>
@@ -325,8 +320,8 @@
 
     <div class="kds-col col-listo">
       <div class="kds-col-header">
-        <span>✅ Listos en Barra</span>
-        <span id="count-listo" class="cart-count" style="background: var(--color-success);">0</span>
+        <span>Listos para Recoger</span>
+        <span id="count-listo" class="cart-count" style="background: var(--color-success-text);">0</span>
       </div>
       <div class="kds-col-body" id="col-body-listo"></div>
     </div>
@@ -376,21 +371,21 @@
             ${itemsHtml}
           </ul>
 
-          ${p.notas ? `<div style="font-size: 0.78rem; background: #3c2f27; padding: 6px 10px; border-radius: 4px; margin-bottom: 8px;">💬 <em>"${p.notas}"</em></div>` : ''}
+          ${p.notas ? `<div style="font-size: 0.78rem; background: var(--color-surface); border: 1px solid var(--color-border); padding: 6px 10px; border-radius: 4px; margin-bottom: 8px; color: var(--color-text-muted);"><em>Nota: "${p.notas}"</em></div>` : ''}
 
-          <div style="font-size: 0.8rem; color: #a99688; margin-bottom: 8px;">
-            Total: <strong>$${Number(p.total).toFixed(2)} MXN</strong> (${p.metodo_pago === 'efectivo_en_barra' ? 'Efectivo en barra' : 'SPEI'})
+          <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 8px;">
+            Total: <strong style="color: var(--color-text); font-family: var(--font-mono);">$${Number(p.total).toFixed(2)} MXN</strong> (${p.metodo_pago === 'efectivo_en_barra' ? 'Efectivo' : 'SPEI'})
           </div>
 
           <div class="order-actions">
             ${p.estado === 'pendiente' ? `
-              <button class="btn btn-accent btn-action-state" data-id="${p.id}" data-state="preparando">Iniciar Preparación ▶</button>
+              <button class="btn btn-primary btn-action-state" data-id="${p.id}" data-state="preparando">Iniciar Preparación</button>
             ` : ''}
             ${p.estado === 'preparando' ? `
-              <button class="btn btn-primary btn-action-state" style="background: var(--color-success);" data-id="${p.id}" data-state="listo_para_recoger">Marcar Listo en Barra ✓</button>
+              <button class="btn btn-primary btn-action-state" style="background: var(--color-success); border-color: var(--color-success); color: #fff;" data-id="${p.id}" data-state="listo_para_recoger">Marcar Listo</button>
             ` : ''}
             ${p.estado === 'listo_para_recoger' ? `
-              <button class="btn btn-outline btn-action-state" style="border-color: #665; color: #fff;" data-id="${p.id}" data-state="entregado">Entregar al Cliente 🎉</button>
+              <button class="btn btn-outline btn-action-state" data-id="${p.id}" data-state="entregado">Entregar Pedido</button>
             ` : ''}
           </div>
         `;
@@ -411,7 +406,6 @@
       document.getElementById('count-preparando').textContent = cPrep;
       document.getElementById('count-listo').textContent = cListo;
 
-      // Actualizar contadores en barra móvil
       const mobPend = document.getElementById('mob-count-pendientes');
       const mobPrep = document.getElementById('mob-count-preparando');
       const mobListo = document.getElementById('mob-count-listo');
@@ -425,14 +419,14 @@
       document.getElementById('stat-activos').textContent = pedidos.length;
       document.getElementById('stat-entregados').textContent = resumen.entregados || 0;
       document.getElementById('stat-ingresos').textContent = `$${Number(resumen.ingresos_totales || 0).toFixed(2)} MXN`;
-      document.getElementById('kds-last-sync').textContent = 'Actualizado: ' + new Date().toLocaleTimeString();
+      document.getElementById('kds-last-sync').textContent = new Date().toLocaleTimeString();
 
       document.querySelectorAll('.btn-action-state').forEach(b => {
         b.addEventListener('click', async (e) => {
           const id = e.currentTarget.dataset.id;
           const state = e.currentTarget.dataset.state;
           e.currentTarget.disabled = true;
-          e.currentTarget.textContent = 'Guardando...';
+          e.currentTarget.textContent = 'Actualizando...';
           await API.actualizarEstadoCocina(id, state);
           await cargarPedidosKds();
         });

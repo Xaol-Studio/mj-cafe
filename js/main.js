@@ -1,6 +1,7 @@
 /**
  * Controlador principal de la tienda y programa de lealtad
  * Proyecto: MJ Café - FES Cuautitlán Campo 4
+ * Autores: Ian Miguel Delgado Huitron & Jorge Alberto Barrios Rosas
  */
 
 import { API } from './api.js';
@@ -92,21 +93,14 @@ function inicializarEventos() {
 
 async function cargarMenu(categoriaId = null) {
   const grid = document.getElementById('products-grid');
-  const badgeStatus = document.getElementById('backend-status-text');
-  const badgeContainer = document.getElementById('backend-status-badge');
-
-  grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #746c65;">Cargando menú de MJ Café... ☕</div>';
+  grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 48px; color: var(--color-text-muted);">Cargando catálogo de MJ Café...</div>';
 
   const res = await API.obtenerProductos(categoriaId);
 
   if (res.origen === 'backend_sql') {
-    badgeStatus.textContent = 'Conectado a SQL (PDO)';
-    badgeContainer.style.background = '#e8f5e9';
-    badgeContainer.style.color = '#2e7d32';
+    console.info('%c[MJ Café]%c Conectado al backend SQLite/PDO', 'color: #B89758; font-weight: bold;', 'color: #FAF8F5;');
   } else {
-    badgeStatus.textContent = 'Sistema Activo';
-    badgeContainer.style.background = '#e8f5e9';
-    badgeContainer.style.color = '#2e7d32';
+    console.info('%c[MJ Café]%c Modo catálogo local activo', 'color: #B89758; font-weight: bold;', 'color: #FAF8F5;');
   }
 
   AppState.categorias = res.data.categorias || [];
@@ -125,7 +119,7 @@ function renderizarCategorias(categorias) {
   primerBoton.onclick = () => {
     activarTab(primerBoton);
     AppState.categoriaActiva = 'all';
-    document.getElementById('current-category-title').textContent = 'Todos los Favoritos';
+    document.getElementById('current-category-title').textContent = 'Todos los Productos';
     filtrarYRenderizarProductos();
   };
 
@@ -133,7 +127,7 @@ function renderizarCategorias(categorias) {
     const btn = document.createElement('button');
     btn.className = 'category-tab';
     btn.dataset.category = cat.id;
-    btn.innerHTML = `<span>${cat.icono || '☕'} ${cat.nombre}</span>`;
+    btn.innerHTML = `<span>${cat.nombre}</span>`;
 
     btn.onclick = () => {
       activarTab(btn);
@@ -177,7 +171,7 @@ function renderizarProductos(productos) {
   grid.innerHTML = '';
 
   if (productos.length === 0) {
-    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #746c65;">No encontramos productos con ese filtro.</div>';
+    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 48px; color: var(--color-text-muted);">No se encontraron productos con ese criterio.</div>';
     return;
   }
 
@@ -191,8 +185,8 @@ function renderizarProductos(productos) {
     card.innerHTML = `
       <div class="product-image-container">
         <img class="product-image" src="${prod.imagen_url}" alt="${prod.nombre}" loading="lazy">
-        ${prod.es_popular ? '<span class="popular-badge">⭐ Favorito C4</span>' : ''}
-        <span class="prep-time-badge">⏱️ ~${prod.tiempo_prep_min || 4} min</span>
+        ${prod.es_popular ? '<span class="popular-badge">Favorito</span>' : ''}
+        <span class="prep-time-badge">${prod.tiempo_prep_min || 4} min</span>
       </div>
 
       <div class="product-body">
@@ -284,15 +278,15 @@ function actualizarCarritoUI() {
         <div class="cart-item-title">${item.nombre}</div>
         <div class="cart-item-price">$${item.precio.toFixed(2)} MXN c/u</div>
         
-        <div style="margin-top: 4px;">
-          <input type="text" class="form-control item-custom-input" placeholder="Personalizar (ej: leche deslactosada)" value="${item.personalizaciones || ''}" style="padding: 4px 8px; font-size: 0.75rem;" data-id="${item.id}">
+        <div style="margin-top: 6px;">
+          <input type="text" class="form-control item-custom-input" placeholder="Personalizar (ej: deslactosada)" value="${item.personalizaciones || ''}" style="padding: 4px 8px; font-size: 0.75rem;" data-id="${item.id}">
         </div>
 
         <div class="cart-item-qty">
           <button type="button" class="btn-qty btn-minus" data-id="${item.id}">-</button>
-          <span style="font-weight: 700; font-size: 0.88rem; min-width: 20px; text-align: center;">${item.cantidad}</span>
+          <span style="font-weight: 700; font-size: 0.88rem; min-width: 20px; text-align: center; color: var(--color-text);">${item.cantidad}</span>
           <button type="button" class="btn-qty btn-plus" data-id="${item.id}">+</button>
-          <span style="margin-left: auto; font-weight: 800; font-size: 0.9rem; color: var(--color-primary);">$${subtotal.toFixed(2)}</span>
+          <span style="margin-left: auto; font-family: var(--font-mono); font-weight: 700; font-size: 0.88rem; color: var(--color-accent);">$${subtotal.toFixed(2)}</span>
         </div>
       </div>
     `;
@@ -362,7 +356,7 @@ async function procesarEnvioPedido() {
   };
 
   btnSubmit.disabled = true;
-  btnSubmit.textContent = 'Enviando comanda a barra... ☕';
+  btnSubmit.textContent = 'Enviando comanda a barra...';
 
   const res = await API.crearPedido(payload);
 
@@ -381,12 +375,12 @@ async function procesarEnvioPedido() {
     document.getElementById('confirmed-total').textContent = `Total: $${total} MXN`;
     const elStamps = document.getElementById('confirmed-stamps');
     if (elStamps) {
-      elStamps.textContent = `🎟️ Club MJ: Ahora tienes ${sellos} de 6 sellos acumulados`;
+      elStamps.textContent = `Club MJ: ${sellos} de 6 sellos acumulados`;
     }
 
-    // Armar mensaje opcional de WhatsApp
+    // Armar mensaje de WhatsApp
     const resumenItems = payload.items.map(i => `• ${i.cantidad}x ${i.nombre}${i.personalizaciones ? ` (${i.personalizaciones})` : ''}`).join('\n');
-    const textoWa = `Hola MJ Café ☕, acabo de registrar mi pedido express:\n\n*Folio:* ${folio}\n*Cliente:* ${payload.cliente_nombre}\n*Recolección:* ${payload.hora_recoleccion}\n\n*Pedido:*\n${resumenItems}\n\n*Total:* $${total} MXN`;
+    const textoWa = `Hola MJ Café, confirmo mi pedido express:\n\nFolio: ${folio}\nCliente: ${payload.cliente_nombre}\nRecolección: ${payload.hora_recoleccion}\n\nPedido:\n${resumenItems}\n\nTotal: $${total} MXN`;
     document.getElementById('btn-whatsapp-order').href = `https://wa.me/525512345678?text=${encodeURIComponent(textoWa)}`;
 
     document.getElementById('confirmation-modal').classList.add('active');
@@ -412,17 +406,17 @@ async function buscarPedidoPorFolio() {
   const res = await API.consultarPedidoPorFolio(folio);
   if (!res.ok || !res.pedido) {
     box.style.display = 'block';
-    box.innerHTML = `<div style="color: var(--color-danger); font-size: 0.88rem; font-weight: 600;">No se encontró ningún pedido con el folio "${folio}".</div>`;
+    box.innerHTML = `<div style="color: var(--color-danger-text); font-size: 0.88rem; font-weight: 600;">No se encontró ningún pedido con el folio "${folio}".</div>`;
     return;
   }
 
   const p = res.pedido;
   const etiquetasEstado = {
-    pendiente: '⏳ Pendiente en cola',
-    preparando: '🔥 Preparando en barra',
-    listo_para_recoger: '✅ ¡Listo para recoger!',
-    entregado: '🎉 Entregado',
-    cancelado: '❌ Cancelado'
+    pendiente: 'En cola',
+    preparando: 'En preparación',
+    listo_para_recoger: 'Listo para recoger',
+    entregado: 'Entregado',
+    cancelado: 'Cancelado'
   };
 
   const detalles = p.detalles || p.items || [];
@@ -431,13 +425,13 @@ async function buscarPedidoPorFolio() {
   box.style.display = 'block';
   box.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <strong style="font-size: 1.05rem; color: var(--color-primary);">${p.folio}</strong>
+      <strong style="font-size: 1.05rem; font-family: var(--font-mono); color: var(--color-accent);">${p.folio}</strong>
       <span class="badge-fes">${etiquetasEstado[p.estado] || p.estado}</span>
     </div>
-    <div style="font-size: 0.88rem; font-weight: 600; margin-bottom: 4px;">Cliente: ${p.cliente_nombre}</div>
+    <div style="font-size: 0.88rem; font-weight: 600; margin-bottom: 4px; color: var(--color-text);">Cliente: ${p.cliente_nombre}</div>
     <div style="font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 10px;">Recolección: ${p.hora_recoleccion_estimada}</div>
-    <ul style="font-size: 0.85rem; padding-left: 18px; margin-bottom: 10px;">${itemsHtml}</ul>
-    <div style="font-weight: 800; font-size: 0.95rem; border-top: 1px solid var(--color-border); padding-top: 8px;">
+    <ul style="font-size: 0.85rem; padding-left: 18px; margin-bottom: 10px; color: var(--color-text-body);">${itemsHtml}</ul>
+    <div style="font-family: var(--font-mono); font-weight: 700; font-size: 0.95rem; border-top: 1px solid var(--color-border); padding-top: 8px; color: var(--color-accent);">
       Total: $${Number(p.total).toFixed(2)} MXN
     </div>
   `;
@@ -469,10 +463,10 @@ function renderizarTarjetaSellos(cliente) {
 
     if (i === 6) {
       stamp.classList.add('reward-stamp');
-      stamp.textContent = '🎁';
-      stamp.title = '¡6to Café Gratis!';
+      stamp.textContent = '6★';
+      stamp.title = '6to Café de Cortesía';
     } else {
-      stamp.textContent = '☕';
+      stamp.textContent = i;
       stamp.title = `Sello ${i}`;
     }
 
@@ -483,10 +477,10 @@ function renderizarTarjetaSellos(cliente) {
   const redeemContainer = document.getElementById('loyalty-redeem-container');
 
   if (sellosActuales >= 6) {
-    msgEl.innerHTML = `🎉 <strong>¡Tienes ${sellosActuales} sellos! Ya puedes canjear tu café gratis en barra.</strong>`;
+    msgEl.innerHTML = `<strong>Tienes ${sellosActuales} sellos acumulados. Ya puedes canjear tu bebida en barra.</strong>`;
     redeemContainer.style.display = 'block';
   } else {
-    msgEl.textContent = `Llevas ${sellosActuales} de 6 sellos. Te faltan ${6 - sellosActuales} para tu bebida de cortesía.`;
+    msgEl.textContent = `${sellosActuales} de 6 sellos acumulados. Te faltan ${6 - sellosActuales} para tu bebida de cortesía.`;
     redeemContainer.style.display = 'none';
   }
 }
@@ -496,7 +490,7 @@ async function consultarSellosCliente() {
   const telefono = phoneInput.value.replace(/\D/g, '');
 
   if (telefono.length < 10) {
-    alert('Ingresa un número de teléfono válido de 10 dígitos (ej. 5512345678 o 5599887766).');
+    alert('Ingresa un número de teléfono válido de 10 dígitos.');
     return;
   }
 
@@ -506,7 +500,7 @@ async function consultarSellosCliente() {
   if (res.ok && res.cliente) {
     renderizarTarjetaSellos(res.cliente);
   } else {
-    alert(res.mensaje || 'Aún no hay sellos con este número. Se creará tu tarjeta en tu primer pedido.');
+    alert(res.mensaje || 'Aún no hay sellos registrados con este número. Se activará en tu primer pedido.');
   }
 }
 
@@ -515,7 +509,7 @@ async function canjearPremioLealtad() {
 
   const res = await API.canjearRecompensa(AppState.telefonoLealtadActivo);
   if (res.ok) {
-    alert(res.mensaje || '¡Bebida de cortesía canjeada con éxito!');
+    alert(res.mensaje || 'Bebida de cortesía canjeada con éxito.');
     await consultarSellosCliente();
   } else {
     alert(res.error || 'No se pudo canjear la recompensa.');
