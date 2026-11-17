@@ -404,6 +404,41 @@
     </div>
   </header>
 
+  <!-- BARRA DE INTEGRACIÓN SUPABASE CLOUD SQL -->
+  <div id="supabase-bar" style="background: rgba(184, 151, 88, 0.08); border-bottom: 1px solid var(--border-subtle); padding: 10px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 0.82rem;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-weight: 700; color: var(--gold-champagne);">⚡ Supabase Cloud:</span>
+      <span id="supabase-status-label" style="color: var(--text-muted);">Sin conectar (usando almacenamiento de sesión en Vercel)</span>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button type="button" id="btn-toggle-sb-config" class="btn-db" style="padding: 4px 10px; font-size: 0.78rem;">
+        ⚙️ Configurar Supabase
+      </button>
+      <a href="../database/supabase_schema.sql" target="_blank" class="btn-db" style="padding: 4px 10px; font-size: 0.78rem;" title="Ver script SQL listo para Supabase">
+        📄 Ver Schema SQL
+      </a>
+    </div>
+  </div>
+
+  <!-- PANEL DE CONFIGURACIÓN DE SUPABASE -->
+  <div id="supabase-config-panel" style="display: none; background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle); padding: 18px 28px;">
+    <div style="max-width: 900px; margin: 0 auto;">
+      <h4 style="margin: 0 0 6px; font-size: 0.95rem; color: var(--gold-champagne);">Conectar Base de Datos Supabase (PostgreSQL en la Nube)</h4>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">
+        Ingresa tu <strong>Project URL</strong> y la clave pública <strong>anon key</strong> generadas en tu proyecto de <a href="https://supabase.com/dashboard" target="_blank" style="color: var(--gold-primary);">supabase.com</a>. Con esto, cualquier pedido realizado en Vercel desde cualquier celular o dispositivo se guardará en la nube central.
+      </p>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+        <input type="text" id="input-sb-url" placeholder="https://xyzcompany.supabase.co" class="form-control" style="flex: 1; min-width: 240px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 8px 12px;">
+        <input type="text" id="input-sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="form-control" style="flex: 2; min-width: 280px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 8px 12px;">
+        <button type="button" id="btn-save-sb" class="btn-db btn-db-primary" style="padding: 8px 16px;">Conectar</button>
+        <button type="button" id="btn-clear-sb" class="btn-db" style="padding: 8px 12px; color: #F87171;">Desconectar</button>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">
+        💡 Recuerda ejecutar el script <code>database/supabase_schema.sql</code> en el <em>SQL Editor</em> de tu proyecto en Supabase para crear las tablas y datos iniciales.
+      </div>
+    </div>
+  </div>
+
   <main class="db-container">
 
     <!-- METRICAS EN VIVO -->
@@ -549,10 +584,55 @@
 
   </main>
 
-  <script src="../js/api.js"></script>
-  <script>
+  <script type="module">
+    import { API, CATALOGO_INICIAL, SUPABASE_CONFIG, supabaseFetch, leerPedidosLocal, leerLealtadLocal } from '../js/api.js';
+
     let ultimosIds = new Set();
     let primerCarga = true;
+
+    // Manejo de configuración de Supabase UI
+    const inputSbUrl = document.getElementById('input-sb-url');
+    const inputSbKey = document.getElementById('input-sb-key');
+    const panelSb = document.getElementById('supabase-config-panel');
+    const labelSb = document.getElementById('supabase-status-label');
+
+    function actualizarEstadoSupabaseUI() {
+      if (SUPABASE_CONFIG.isConfigured()) {
+        labelSb.innerHTML = `<strong style="color: var(--green-accent);">Conectado a Cloud SQL</strong> (${SUPABASE_CONFIG.url})`;
+        inputSbUrl.value = SUPABASE_CONFIG.url;
+        inputSbKey.value = SUPABASE_CONFIG.anonKey;
+      } else {
+        labelSb.textContent = 'Sin conectar (usando almacenamiento de sesión en Vercel)';
+      }
+    }
+    actualizarEstadoSupabaseUI();
+
+    document.getElementById('btn-toggle-sb-config').addEventListener('click', () => {
+      panelSb.style.display = panelSb.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.getElementById('btn-save-sb').addEventListener('click', () => {
+      const url = inputSbUrl.value.trim();
+      const key = inputSbKey.value.trim();
+      if (!url.startsWith('https://') || !key) {
+        alert('Ingresa una URL válida de Supabase (ej: https://xyzcompany.supabase.co) y la clave anon key.');
+        return;
+      }
+      SUPABASE_CONFIG.guardar(url, key);
+      actualizarEstadoSupabaseUI();
+      panelSb.style.display = 'none';
+      cargarDatosBD();
+    });
+
+    document.getElementById('btn-clear-sb').addEventListener('click', () => {
+      if (confirm('¿Desconectar Supabase y volver al modo local?')) {
+        SUPABASE_CONFIG.limpiar();
+        inputSbUrl.value = '';
+        inputSbKey.value = '';
+        actualizarEstadoSupabaseUI();
+        cargarDatosBD();
+      }
+    });
 
     // Manejo de pestañas
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -568,7 +648,46 @@
     });
 
     async function cargarDatosBD() {
-      // 1. Intentar cargar desde el backend nativo SQLite si está disponible
+      // 1. Si Supabase está configurado, consultar Supabase Cloud SQL
+      if (SUPABASE_CONFIG.isConfigured()) {
+        try {
+          const pedidos = await supabaseFetch('pedidos?order=id.desc');
+          const detalles = await supabaseFetch('pedido_detalles?select=*,producto:productos(nombre,imagen_url),pedido:pedidos(folio)&order=id.desc');
+          const clientes = await supabaseFetch('clientes_lealtad?order=sellos_acumulados.desc');
+          const prods = await supabaseFetch('productos?select=*,categoria:categorias(nombre)&order=id.asc');
+
+          const stats = {
+            total_pedidos: (pedidos || []).length,
+            ingresos_totales: (pedidos || []).reduce((acc, p) => p.estado !== 'cancelado' ? acc + Number(p.total || 0) : acc, 0),
+            pendientes: (pedidos || []).filter(p => ['pendiente', 'preparando'].includes(p.estado)).length,
+            clientes_lealtad: (clientes || []).length
+          };
+
+          const badgePath = document.getElementById('db-file-path');
+          if (badgePath) badgePath.textContent = `Supabase Cloud SQL (${SUPABASE_CONFIG.url})`;
+
+          actualizarMetricas(stats);
+          renderizarPedidos(pedidos);
+          renderizarDetalles((detalles || []).map(d => ({
+            ...d,
+            pedido_folio: d.pedido?.folio || '#' + d.pedido_id,
+            producto_nombre: d.producto?.nombre || 'Producto #' + d.producto_id
+          })));
+          renderizarLealtad(clientes);
+          renderizarProductos((prods || []).map(p => ({
+            ...p,
+            categoria_nombre: p.categoria?.nombre || 'Especialidad'
+          })));
+
+          document.getElementById('sync-timer').textContent = 'Supabase sinc: ' + new Date().toLocaleTimeString();
+          primerCarga = false;
+          return;
+        } catch (err) {
+          console.warn('Supabase fetch error en visor:', err);
+        }
+      }
+
+      // 2. Intentar cargar desde el backend nativo SQLite si está disponible
       try {
         const res = await fetch('/api/db_data');
         if (res.ok) {
@@ -592,7 +711,7 @@
         // En Vercel /api/db_data no existe, pasamos al almacenamiento unificado
       }
 
-      // 2. Si estamos en Vercel, cargar los pedidos reales guardados en la sesión del navegador
+      // 3. Si estamos en Vercel, cargar los pedidos reales guardados en la sesión del navegador
       cargarDesdeStorageVercel();
     }
 

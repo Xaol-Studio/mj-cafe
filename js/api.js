@@ -3,12 +3,54 @@
  * Proyecto: MJ Café - FES Cuautitlán Campo 4
  */
 
-const API_BASE_URL = '../backend/api';
-const STORAGE_KEY_PEDIDOS = 'mj_cafe_pedidos_v1';
-const STORAGE_KEY_LEALTAD = 'mj_cafe_lealtad_v1';
+export const API_BASE_URL = '../backend/api';
+export const STORAGE_KEY_PEDIDOS = 'mj_cafe_pedidos_v1';
+export const STORAGE_KEY_LEALTAD = 'mj_cafe_lealtad_v1';
+
+export const SUPABASE_CONFIG = {
+  url: window.SUPABASE_URL || localStorage.getItem('mj_supabase_url') || '',
+  anonKey: window.SUPABASE_ANON_KEY || localStorage.getItem('mj_supabase_anon_key') || '',
+
+  isConfigured() {
+    return Boolean(this.url && this.anonKey && this.url.startsWith('https://'));
+  },
+
+  guardar(url, key) {
+    this.url = (url || '').trim().replace(/\/$/, '');
+    this.anonKey = (key || '').trim();
+    localStorage.setItem('mj_supabase_url', this.url);
+    localStorage.setItem('mj_supabase_anon_key', this.anonKey);
+  },
+
+  limpiar() {
+    this.url = '';
+    this.anonKey = '';
+    localStorage.removeItem('mj_supabase_url');
+    localStorage.removeItem('mj_supabase_anon_key');
+  }
+};
+
+export async function supabaseFetch(endpoint, options = {}) {
+  if (!SUPABASE_CONFIG.isConfigured()) return null;
+  const cleanEndpoint = endpoint.replace(/^\//, '');
+  const url = `${SUPABASE_CONFIG.url}/rest/v1/${cleanEndpoint}`;
+  const headers = {
+    'apikey': SUPABASE_CONFIG.anonKey,
+    'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...(options.headers || {})
+  };
+  const res = await fetch(url, { ...options, headers });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Supabase error (${res.status}): ${errorText}`);
+  }
+  return await res.json();
+}
 
 // Catálogo completo de MJ Café (sincronizado con database/seeds.sql)
-const CATALOGO_INICIAL = {
+export const CATALOGO_INICIAL = {
   categorias: [
     { id: 1, nombre: 'Café de Especialidad', slug: 'cafe-especialidad', icono: '☕' },
     { id: 2, nombre: 'Frappés & Frías', slug: 'frappes-frias', icono: '🥤' },
@@ -227,7 +269,7 @@ const LEALTAD_SEMILLA = {
   '5599887766': { id: 3, nombre: 'Fernanda Morales', telefono: '5599887766', carrera: 'Química Industrial - FES C4', sellos: 6, recompensas_canjeadas: 1, total_visitas: 12 }
 };
 
-function leerPedidosLocal() {
+export function leerPedidosLocal() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_PEDIDOS);
     if (!raw) {
@@ -240,7 +282,7 @@ function leerPedidosLocal() {
   }
 }
 
-function guardarPedidosLocal(pedidos) {
+export function guardarPedidosLocal(pedidos) {
   try {
     localStorage.setItem(STORAGE_KEY_PEDIDOS, JSON.stringify(pedidos));
   } catch (e) {
@@ -248,7 +290,7 @@ function guardarPedidosLocal(pedidos) {
   }
 }
 
-function leerLealtadLocal() {
+export function leerLealtadLocal() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_LEALTAD);
     if (!raw) {
@@ -261,7 +303,7 @@ function leerLealtadLocal() {
   }
 }
 
-function guardarLealtadLocal(mapa) {
+export function guardarLealtadLocal(mapa) {
   try {
     localStorage.setItem(STORAGE_KEY_LEALTAD, JSON.stringify(mapa));
   } catch (e) {
@@ -304,6 +346,123 @@ export const API = {
   },
 
   async crearPedido(pedidoPayload) {
+    if (!pedidoPayload.items || pedidoPayload.items.length === 0) {
+      return { ok: false, error: 'El carrito está vacío. Agrega al menos un producto al pedido.' };
+    }
+
+    // 1. Si Supabase está configurado, guardar directamente en Supabase Cloud SQL
+    if (SUPABASE_CONFIG.isConfigured()) {
+      try {
+        const tel = String(pedidoPayload.cliente_telefono || '').replace(/\D/g, '');
+        const items = pedidoPayload.items || [];
+
+        let totalCalculado = 0;
+        const itemsVerificados = items.map(item => {
+          const prod = CATALOGO_INICIAL.productos.find(p => p.id === Number(item.producto_id));
+          const pu = prod ? prod.precio : Number(item.precio || 0);
+          const sub = pu * Number(item.cantidad || 1);
+          totalCalculado += sub;
+          return {
+            producto_id: Number(item.producto_id),
+            nombre: prod ? prod.nombre : (item.nombre || 'Producto'),
+            cantidad: Number(item.cantidad || 1),
+            precio_unitario: pu,
+            subtotal: sub,
+            personalizaciones: item.personalizaciones || ''
+          };
+        });
+
+        // Actualizar o crear cliente de lealtad en Supabase
+        let sellosActuales = 1;
+        try {
+          const clientes = await supabaseFetch(`clientes_lealtad?telefono=eq.${tel}&select=*`);
+          if (clientes && clientes.length > 0) {
+            const c = clientes[0];
+            sellosActuales = (c.sellos_acumulados || 0) + 1;
+            await supabaseFetch(`clientes_lealtad?id=eq.${c.id}`, {
+              method: 'PATCH',
+              body: JSON.stringify({
+                sellos_acumulados: sellosActuales,
+                total_visitas: (c.total_visitas || 0) + 1,
+                nombre: pedidoPayload.cliente_nombre || c.nombre,
+                last_visit_at: new Date().toISOString()
+              })
+            });
+          } else {
+            await supabaseFetch('clientes_lealtad', {
+              method: 'POST',
+              body: JSON.stringify({
+                telefono: tel,
+                nombre: pedidoPayload.cliente_nombre,
+                carrera: 'FES Cuautitlán Campo 4',
+                sellos_acumulados: 1,
+                total_visitas: 1,
+                created_at: new Date().toISOString(),
+                last_visit_at: new Date().toISOString()
+              })
+            });
+          }
+        } catch (e) {
+          console.warn('Lealtad Supabase:', e);
+        }
+
+        const folio = 'MJ-' + new Date().getFullYear() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+
+        const [nuevoPedido] = await supabaseFetch('pedidos', {
+          method: 'POST',
+          body: JSON.stringify({
+            folio,
+            cliente_nombre: pedidoPayload.cliente_nombre,
+            cliente_telefono: tel,
+            hora_recoleccion_estimada: pedidoPayload.hora_recoleccion || 'En 15 minutos',
+            estado: 'pendiente',
+            total: totalCalculado,
+            metodo_pago: pedidoPayload.metodo_pago || 'efectivo_en_barra',
+            notas: pedidoPayload.notas || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+        });
+
+        const detallesAInsertar = itemsVerificados.map(iv => ({
+          pedido_id: nuevoPedido.id,
+          producto_id: iv.producto_id,
+          cantidad: iv.cantidad,
+          precio_unitario: iv.precio_unitario,
+          subtotal: iv.subtotal,
+          personalizaciones: iv.personalizaciones,
+          created_at: new Date().toISOString()
+        }));
+
+        await supabaseFetch('pedido_detalles', {
+          method: 'POST',
+          body: JSON.stringify(detallesAInsertar)
+        });
+
+        // Guardar copia local de contingencia
+        try {
+          const local = leerPedidosLocal();
+          local.unshift({ ...nuevoPedido, items: itemsVerificados });
+          guardarPedidosLocal(local);
+        } catch (_) {}
+
+        return {
+          ok: true,
+          origen: 'supabase_cloud',
+          data: {
+            folio,
+            id: nuevoPedido.id,
+            total: totalCalculado,
+            hora_recoleccion: pedidoPayload.hora_recoleccion,
+            sellos_acumulados: sellosActuales
+          }
+        };
+      } catch (err) {
+        console.warn('Supabase no disponible, usando fallback:', err);
+      }
+    }
+
+    // 2. Intentar backend PHP local
     try {
       const data = await fetchJsonSeguro(`${API_BASE_URL}/pedidos.php`, {
         method: 'POST',
@@ -387,6 +546,32 @@ export const API = {
 
   async consultarPedidoPorFolio(folio) {
     const folioLimpio = String(folio || '').trim().toUpperCase();
+    if (!folioLimpio) {
+      return { ok: false, error: 'Ingresa un folio válido.' };
+    }
+
+    if (SUPABASE_CONFIG.isConfigured()) {
+      try {
+        const res = await supabaseFetch(`pedidos?folio=ilike.${encodeURIComponent(folioLimpio)}&select=*,items:pedido_detalles(*,producto:productos(nombre,imagen_url))&limit=1`);
+        if (res && res.length > 0) {
+          const p = res[0];
+          return {
+            ok: true,
+            origen: 'supabase_cloud',
+            pedido: {
+              ...p,
+              detalles: (p.items || []).map(it => ({
+                ...it,
+                producto_nombre: it.producto?.nombre || `Producto #${it.producto_id}`
+              }))
+            }
+          };
+        }
+      } catch (err) {
+        console.warn('Rastreo Supabase error:', err);
+      }
+    }
+
     try {
       return await fetchJsonSeguro(`${API_BASE_URL}/pedidos.php?folio=${encodeURIComponent(folioLimpio)}`);
     } catch {
@@ -407,6 +592,30 @@ export const API = {
 
   async consultarLealtad(telefono) {
     const tel = String(telefono || '').replace(/\D/g, '');
+
+    if (SUPABASE_CONFIG.isConfigured()) {
+      try {
+        const res = await supabaseFetch(`clientes_lealtad?telefono=eq.${tel}&select=*&limit=1`);
+        if (res && res.length > 0) {
+          const c = res[0];
+          return {
+            ok: true,
+            origen: 'supabase_cloud',
+            encontrado: true,
+            cliente: {
+              ...c,
+              sellos: c.sellos_acumulados || 0,
+              sellos_meta: 6,
+              sellos_faltantes: Math.max(0, 6 - (c.sellos_acumulados || 0)),
+              tiene_recompensa_disponible: (c.sellos_acumulados || 0) >= 6
+            }
+          };
+        }
+      } catch (err) {
+        console.warn('Lealtad Supabase error:', err);
+      }
+    }
+
     try {
       return await fetchJsonSeguro(`${API_BASE_URL}/lealtad.php?telefono=${encodeURIComponent(tel)}`);
     } catch {
@@ -434,6 +643,36 @@ export const API = {
 
   async canjearRecompensa(telefono) {
     const tel = String(telefono || '').replace(/\D/g, '');
+
+    if (SUPABASE_CONFIG.isConfigured()) {
+      try {
+        const res = await supabaseFetch(`clientes_lealtad?telefono=eq.${tel}&select=*&limit=1`);
+        if (res && res.length > 0) {
+          const c = res[0];
+          if ((c.sellos_acumulados || 0) < 6) {
+            return { ok: false, error: 'Necesitas al menos 6 sellos para canjear tu bebida.' };
+          }
+          await supabaseFetch(`clientes_lealtad?id=eq.${c.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              sellos_acumulados: (c.sellos_acumulados || 0) - 6,
+              recompensas_canjeadas: (c.recompensas_canjeadas || 0) + 1,
+              last_visit_at: new Date().toISOString()
+            })
+          });
+          return {
+            ok: true,
+            origen: 'supabase_cloud',
+            mensaje: '¡Café de cortesía canjeado! Muestra esta confirmación en barra.',
+            sellos_restantes: (c.sellos_acumulados || 0) - 6,
+            recompensas_canjeadas: (c.recompensas_canjeadas || 0) + 1
+          };
+        }
+      } catch (err) {
+        console.warn('Canje Supabase error:', err);
+      }
+    }
+
     try {
       return await fetchJsonSeguro(`${API_BASE_URL}/lealtad.php`, {
         method: 'POST',
@@ -459,6 +698,36 @@ export const API = {
   },
 
   async obtenerPedidosCocina() {
+    if (SUPABASE_CONFIG.isConfigured()) {
+      try {
+        const pedidos = await supabaseFetch('pedidos?estado=in.(pendiente,preparando,listo_para_recoger)&select=*,items:pedido_detalles(*,producto:productos(nombre))&order=id.asc');
+        const todos = await supabaseFetch('pedidos?select=total,estado');
+        const ingresos = (todos || []).reduce((acc, p) => p.estado !== 'cancelado' ? acc + Number(p.total || 0) : acc, 0);
+        const entregados = (todos || []).filter(p => p.estado === 'entregado').length;
+
+        const formateados = (pedidos || []).map(p => ({
+          ...p,
+          items: (p.items || []).map(it => ({
+            ...it,
+            producto_nombre: it.producto?.nombre || `Producto #${it.producto_id}`
+          }))
+        }));
+
+        return {
+          ok: true,
+          origen: 'supabase_cloud',
+          pedidos: formateados,
+          resumen: {
+            total_pedidos: (todos || []).length,
+            ingresos_totales: ingresos,
+            entregados
+          }
+        };
+      } catch (err) {
+        console.warn('Cocina Supabase error:', err);
+      }
+    }
+
     try {
       return await fetchJsonSeguro(`${API_BASE_URL}/cocina.php`);
     } catch {
@@ -479,6 +748,21 @@ export const API = {
   },
 
   async actualizarEstadoCocina(pedidoId, nuevoEstado) {
+    if (SUPABASE_CONFIG.isConfigured()) {
+      try {
+        await supabaseFetch(`pedidos?id=eq.${pedidoId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            estado: nuevoEstado,
+            updated_at: new Date().toISOString()
+          })
+        });
+        return { ok: true, origen: 'supabase_cloud', mensaje: `Estado actualizado a ${nuevoEstado}` };
+      } catch (err) {
+        console.warn('Actualizar cocina Supabase error:', err);
+      }
+    }
+
     try {
       return await fetchJsonSeguro(`${API_BASE_URL}/cocina.php`, {
         method: 'POST',
