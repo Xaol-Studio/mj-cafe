@@ -269,6 +269,9 @@
 
     <div class="kds-header-actions">
       <span id="kds-last-sync" style="font-size: 0.78rem; font-family: var(--font-mono); color: var(--color-text-muted);">Sincronizando...</span>
+      <button id="btn-reset-demo" class="btn btn-outline" style="padding: 7px 12px; font-size: 0.8rem;" title="Restaurar comandas de ejemplo en modo local">
+        Restablecer Demo
+      </button>
       <button id="btn-refresh-kds" class="btn btn-outline" style="padding: 7px 12px; font-size: 0.8rem;">
         Actualizar
       </button>
@@ -402,6 +405,11 @@
         }
       });
 
+      const emptyStateHtml = '<div style="text-align: center; padding: 32px 12px; color: var(--color-text-muted); font-size: 0.84rem; border: 1px dashed var(--color-border); border-radius: var(--radius-sm);">Sin comandas en esta etapa</div>';
+      if (cPendiente === 0) colPendientes.innerHTML = emptyStateHtml;
+      if (cPrep === 0) colPreparando.innerHTML = emptyStateHtml;
+      if (cListo === 0) colListo.innerHTML = emptyStateHtml;
+
       document.getElementById('count-pendientes').textContent = cPendiente;
       document.getElementById('count-preparando').textContent = cPrep;
       document.getElementById('count-listo').textContent = cListo;
@@ -446,6 +454,11 @@
           columns.setAttribute('data-filter', target);
         }
       });
+    });
+
+    document.getElementById('btn-reset-demo').addEventListener('click', async () => {
+      localStorage.removeItem('mj_cafe_pedidos_v1');
+      await cargarPedidosKds();
     });
 
     document.getElementById('btn-refresh-kds').addEventListener('click', cargarPedidosKds);

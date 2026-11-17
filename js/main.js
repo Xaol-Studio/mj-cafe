@@ -39,6 +39,9 @@ function inicializarEventos() {
   const btnOpenTrack = document.getElementById('btn-open-track');
   const btnCloseTrack = document.getElementById('btn-close-track');
   const trackModal = document.getElementById('track-modal');
+  const inputTrackFolio = document.getElementById('input-track-folio');
+  const trackDemoChips = document.getElementById('track-demo-chips');
+
   if (btnOpenTrack && trackModal) {
     btnOpenTrack.addEventListener('click', () => trackModal.classList.add('active'));
     btnCloseTrack.addEventListener('click', () => trackModal.classList.remove('active'));
@@ -48,7 +51,28 @@ function inicializarEventos() {
     document.getElementById('btn-search-folio').addEventListener('click', buscarPedidoPorFolio);
   }
 
+  if (inputTrackFolio) {
+    inputTrackFolio.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        buscarPedidoPorFolio();
+      }
+    });
+  }
+
+  if (trackDemoChips && inputTrackFolio) {
+    trackDemoChips.addEventListener('click', (e) => {
+      const chip = e.target.closest('.btn-demo-folio');
+      if (!chip) return;
+      inputTrackFolio.value = chip.dataset.folio || '';
+      buscarPedidoPorFolio();
+    });
+  }
+
   // Modal de Lealtad Club MJ
+  const inputLoyaltyPhone = document.getElementById('input-search-loyalty-phone');
+  const loyaltyDemoChips = document.getElementById('loyalty-demo-chips');
+
   document.getElementById('btn-open-loyalty').addEventListener('click', abrirModalLealtad);
   document.getElementById('btn-close-loyalty').addEventListener('click', cerrarModalLealtad);
   document.getElementById('loyalty-modal').addEventListener('click', (e) => {
@@ -56,6 +80,24 @@ function inicializarEventos() {
   });
   document.getElementById('btn-search-loyalty').addEventListener('click', consultarSellosCliente);
   document.getElementById('btn-redeem-reward').addEventListener('click', canjearPremioLealtad);
+
+  if (inputLoyaltyPhone) {
+    inputLoyaltyPhone.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        consultarSellosCliente();
+      }
+    });
+  }
+
+  if (loyaltyDemoChips && inputLoyaltyPhone) {
+    loyaltyDemoChips.addEventListener('click', (e) => {
+      const chip = e.target.closest('.btn-demo-phone');
+      if (!chip) return;
+      inputLoyaltyPhone.value = chip.dataset.phone || '';
+      consultarSellosCliente();
+    });
+  }
 
   // Modal de Confirmación
   document.getElementById('btn-close-confirmation').addEventListener('click', () => {
@@ -384,6 +426,7 @@ async function procesarEnvioPedido() {
     document.getElementById('btn-whatsapp-order').href = `https://wa.me/525512345678?text=${encodeURIComponent(textoWa)}`;
 
     document.getElementById('confirmation-modal').classList.add('active');
+    agregarFolioDemo(folio);
 
     AppState.carrito = [];
     actualizarCarritoUI();
@@ -391,6 +434,22 @@ async function procesarEnvioPedido() {
   } else {
     alert('Error al registrar pedido: ' + (res.error || 'Intenta nuevamente'));
   }
+}
+
+function agregarFolioDemo(folio) {
+  const chipsContainer = document.getElementById('track-demo-chips');
+  if (!chipsContainer || !folio) return;
+  const existe = Array.from(chipsContainer.querySelectorAll('.btn-demo-folio')).some(
+    btn => (btn.dataset.folio || '').toUpperCase() === folio.toUpperCase()
+  );
+  if (existe) return;
+
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = 'btn-demo-chip btn-demo-folio';
+  chip.dataset.folio = folio;
+  chip.textContent = folio;
+  chipsContainer.appendChild(chip);
 }
 
 async function buscarPedidoPorFolio() {

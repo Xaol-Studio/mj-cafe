@@ -863,6 +863,85 @@ button {
   border-color: var(--color-accent);
 }
 
+/* Chips de acceso rápido en modales */
+.demo-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.demo-chips-label {
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+}
+
+.btn-demo-chip {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  color: var(--color-accent);
+  transition: var(--transition-fast);
+}
+
+.btn-demo-chip:hover {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent-soft);
+}
+
+/* --------------------------------------------------------------------------
+   IDENTIDAD INSTITUCIONAL (SECTOR, MISIÓN Y VISIÓN)
+   -------------------------------------------------------------------------- */
+.identity-section {
+  padding: 12px 0 24px;
+}
+
+.identity-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.identity-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: var(--transition-fast);
+}
+
+.identity-card:hover {
+  border-color: var(--color-accent);
+}
+
+.identity-card-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.identity-card h4 {
+  font-size: 1.12rem;
+  color: var(--color-text);
+}
+
+.identity-card p {
+  font-size: 0.84rem;
+  color: var(--color-text-body);
+  line-height: 1.55;
+}
+
 /* --------------------------------------------------------------------------
    FOOTER
    -------------------------------------------------------------------------- */
@@ -1176,6 +1255,11 @@ button {
     width: 34px;
     height: 34px;
     font-size: 1.1rem;
+  }
+
+  .identity-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
 
   .footer-grid {

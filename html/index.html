@@ -181,9 +181,15 @@
         </p>
       </div>
 
-      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
         <input type="text" id="input-track-folio" class="form-control" placeholder="Ej: MJ-2026-101" style="flex-grow: 1; text-transform: uppercase; font-family: var(--font-mono);">
         <button id="btn-search-folio" class="btn btn-primary" style="padding: 10px 18px;">Buscar</button>
+      </div>
+
+      <div class="demo-chips" id="track-demo-chips">
+        <span class="demo-chips-label">Folios de prueba:</span>
+        <button type="button" class="btn-demo-chip btn-demo-folio" data-folio="MJ-2026-101">MJ-2026-101</button>
+        <button type="button" class="btn-demo-chip btn-demo-folio" data-folio="MJ-2026-102">MJ-2026-102</button>
       </div>
 
       <div id="track-result-box" style="display: none; background-color: var(--color-surface-elevated); color: var(--color-text); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 16px;">
@@ -211,9 +217,15 @@
         </p>
       </div>
 
-      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
         <input type="tel" id="input-search-loyalty-phone" class="form-control" placeholder="10 dígitos (ej: 5512345678)" style="flex-grow: 1; font-family: var(--font-mono);">
         <button id="btn-search-loyalty" class="btn btn-accent" style="padding: 10px 18px;">Consultar</button>
+      </div>
+
+      <div class="demo-chips" id="loyalty-demo-chips">
+        <span class="demo-chips-label">Cuentas demo:</span>
+        <button type="button" class="btn-demo-chip btn-demo-phone" data-phone="5512345678">5512345678 (5 sellos)</button>
+        <button type="button" class="btn-demo-chip btn-demo-phone" data-phone="5599887766">5599887766 (Canje disponible)</button>
       </div>
 
       <div class="stamp-card-ui" id="stamp-card-display">
@@ -274,6 +286,45 @@
       </div>
     </div>
   </div>
+
+  <!-- IDENTIDAD Y PROPUESTA DE VALOR -->
+  <section class="identity-section" id="nosotros">
+    <div class="container">
+      <div class="section-header" style="margin-bottom: 20px;">
+        <div>
+          <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--color-accent); letter-spacing: 0.06em; text-transform: uppercase;">Identidad Institucional</span>
+          <h3 class="section-title font-serif" style="margin-top: 2px;">Propuesta de Valor & Enfoque</h3>
+        </div>
+        <span class="badge-fes">FES Cuautitlán UNAM</span>
+      </div>
+
+      <div class="identity-grid">
+        <article class="identity-card">
+          <div class="identity-card-kicker">01 • Sector & Enfoque</div>
+          <h4 class="font-serif">Servicios de Alimentos & Especialidad</h4>
+          <p>
+            Cafetería enfocada en la comunidad académica de FES Cuautitlán Campo 4 (Av. Benito Juárez #1). Menú diseñado para recolección rápida en cambios de clase de 10 a 15 minutos.
+          </p>
+        </article>
+
+        <article class="identity-card">
+          <div class="identity-card-kicker">02 • Misión</div>
+          <h4 class="font-serif">Calidad Artesanal Sin Esperas</h4>
+          <p>
+            Ofrecer café de especialidad y alimentos frescos listos al momento, eliminando las filas en horas pico mediante pedidos anticipados desde cualquier dispositivo y trato directo en barra.
+          </p>
+        </article>
+
+        <article class="identity-card">
+          <div class="identity-card-kicker">03 • Visión</div>
+          <h4 class="font-serif">Referente Universitario Digital</h4>
+          <p>
+            Consolidarse como el punto de encuentro y cafetería tecnológica de referencia en la zona norte del Estado de México, integrando lealtad digital y operación eficiente sin intermediarios.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
 
   <!-- FOOTER -->
   <footer class="site-footer">
