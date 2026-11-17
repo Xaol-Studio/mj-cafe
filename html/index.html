@@ -106,9 +106,13 @@
     </div>
 
     <div class="drawer-body">
-      <div id="cart-empty-message" style="text-align: center; padding: 48px 16px; color: var(--color-text-muted);">
+      <div id="cart-empty-message" style="text-align: center; padding: 40px 16px; color: var(--color-text-muted);">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">☕</div>
         <p style="font-weight: 600; color: var(--color-text); margin-bottom: 6px;">Tu carrito está vacío</p>
-        <p style="font-size: 0.85rem;">Agrega bebidas o alimentos del menú para tu pedido.</p>
+        <p style="font-size: 0.85rem; margin-bottom: 14px;">Agrega bebidas o alimentos del menú para tu pedido.</p>
+        <button type="button" class="btn btn-outline" id="btn-explore-menu-cart" style="font-size: 0.82rem; padding: 7px 16px;">
+          Explorar Menú
+        </button>
       </div>
 
       <div class="cart-items-list" id="cart-items-container"></div>
@@ -163,7 +167,17 @@
         <span class="drawer-total-label">Total a Pagar:</span>
         <span class="drawer-total-amount" id="cart-total-amount">$0.00 MXN</span>
       </div>
-      <button id="btn-submit-order" class="btn btn-primary" style="width: 100%; padding: 13px; font-size: 0.95rem;" disabled>
+
+      <!-- Leyenda de advertencia cuando intenta ordenar con carrito vacío -->
+      <div id="cart-empty-warning" class="cart-empty-warning" role="alert" style="display: none;">
+        <span class="cart-warning-icon">⚠️</span>
+        <div class="cart-warning-content">
+          <strong>No has agregado ningún producto:</strong>
+          <span>Por favor, agrega al menos un producto del menú antes de hacer tu pedido.</span>
+        </div>
+      </div>
+
+      <button id="btn-submit-order" type="button" class="btn btn-primary" style="width: 100%; padding: 13px; font-size: 0.95rem;">
         Confirmar Pedido Express
       </button>
     </div>

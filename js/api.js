@@ -49,7 +49,7 @@ const CATALOGO_INICIAL = {
       tiempo_prep_min: 4,
       disponible: true,
       es_popular: false,
-      imagen_url: 'https://images.unsplash.com/photo-1572442388796-11668ba67e53?w=600&auto=format&fit=crop&q=80',
+      imagen_url: 'https://images.unsplash.com/photo-1534778101976-62847782c213?w=600&auto=format&fit=crop&q=80',
       categoria: { id: 1, nombre: 'Café de Especialidad', slug: 'cafe-especialidad' }
     },
     {

@@ -104,7 +104,26 @@ function inicializarEventos() {
     document.getElementById('confirmation-modal').classList.remove('active');
   });
 
-  // Envío del pedido
+  // Botón para explorar menú desde carrito vacío
+  const btnExplore = document.getElementById('btn-explore-menu-cart');
+  if (btnExplore) {
+    btnExplore.addEventListener('click', () => {
+      cerrarCarrito();
+      const menuEl = document.getElementById('menu');
+      if (menuEl) menuEl.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  // Interceptar envío del formulario de pedido
+  const checkoutForm = document.getElementById('checkout-form');
+  if (checkoutForm) {
+    checkoutForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      procesarEnvioPedido();
+    });
+  }
+
+  // Envío del pedido con botón
   document.getElementById('btn-submit-order').addEventListener('click', procesarEnvioPedido);
 
   // Móvil: Barra de navegación inferior (Dock)
@@ -226,7 +245,7 @@ function renderizarProductos(productos) {
 
     card.innerHTML = `
       <div class="product-image-container">
-        <img class="product-image" src="${prod.imagen_url}" alt="${prod.nombre}" loading="lazy">
+        <img class="product-image" src="${prod.imagen_url}" alt="${prod.nombre}" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80';">
         ${prod.es_popular ? '<span class="popular-badge">Favorito</span>' : ''}
         <span class="prep-time-badge">${prod.tiempo_prep_min || 4} min</span>
       </div>
@@ -293,17 +312,22 @@ function actualizarCarritoUI() {
   if (mobBadge) mobBadge.textContent = totalItems;
   if (floatingCount) floatingCount.textContent = totalItems;
 
+  const warningEl = document.getElementById('cart-empty-warning');
+
   if (AppState.carrito.length === 0) {
     emptyMsg.style.display = 'block';
     totalAmountEl.textContent = '$0.00 MXN';
     if (floatingTotal) floatingTotal.textContent = '$0.00 MXN';
-    btnSubmit.disabled = true;
+    btnSubmit.disabled = false;
+    btnSubmit.classList.add('btn-cart-empty');
     if (floatingBar) floatingBar.classList.remove('active');
     return;
   }
 
   emptyMsg.style.display = 'none';
   btnSubmit.disabled = false;
+  btnSubmit.classList.remove('btn-cart-empty');
+  if (warningEl) warningEl.style.display = 'none';
   if (floatingBar) floatingBar.classList.add('active');
 
   let granTotal = 0;
@@ -315,7 +339,7 @@ function actualizarCarritoUI() {
     const row = document.createElement('div');
     row.className = 'cart-item';
     row.innerHTML = `
-      <img src="${item.imagen_url}" alt="${item.nombre}" class="cart-item-img">
+      <img src="${item.imagen_url}" alt="${item.nombre}" class="cart-item-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80';">
       <div class="cart-item-info">
         <div class="cart-item-title">${item.nombre}</div>
         <div class="cart-item-price">$${item.precio.toFixed(2)} MXN c/u</div>
@@ -369,6 +393,30 @@ function cerrarCarrito() {
 }
 
 async function procesarEnvioPedido() {
+  const warningEl = document.getElementById('cart-empty-warning');
+
+  // Si no hay productos en el carrito, mostrar la leyenda solicitando agregar uno
+  if (!AppState.carrito || AppState.carrito.length === 0) {
+    if (warningEl) {
+      warningEl.style.display = 'flex';
+      warningEl.classList.remove('shake');
+      void warningEl.offsetWidth; // Forzar reinicio de animación
+      warningEl.classList.add('shake');
+      warningEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    const emptyMsg = document.getElementById('cart-empty-message');
+    if (emptyMsg) {
+      emptyMsg.classList.remove('pulse-highlight');
+      void emptyMsg.offsetWidth;
+      emptyMsg.classList.add('pulse-highlight');
+    }
+    return;
+  }
+
+  // Ocultar advertencia si ya hay productos
+  if (warningEl) warningEl.style.display = 'none';
+
   const form = document.getElementById('checkout-form');
   const nameInput = document.getElementById('input-client-name');
   const phoneInput = document.getElementById('input-client-phone');

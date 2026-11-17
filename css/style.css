@@ -777,6 +777,63 @@ button {
   color: var(--color-accent);
 }
 
+.cart-empty-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background-color: rgba(97, 22, 36, 0.28);
+  border: 1px solid rgba(184, 151, 88, 0.5);
+  border-left: 4px solid var(--color-wine, #611624);
+  color: var(--color-text, #FAF8F5);
+  padding: 11px 14px;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.83rem;
+  line-height: 1.4;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: all 0.25s ease;
+}
+
+.cart-warning-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.cart-warning-content strong {
+  display: block;
+  color: var(--color-accent, #B89758);
+  font-size: 0.84rem;
+  margin-bottom: 2px;
+}
+
+.cart-empty-warning.shake {
+  animation: cartAlertShake 0.45s ease-in-out;
+  border-color: var(--color-accent, #B89758);
+  box-shadow: 0 0 16px rgba(184, 151, 88, 0.45);
+}
+
+@keyframes cartAlertShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.pulse-highlight {
+  animation: pulseCard 0.5s ease-in-out;
+}
+
+@keyframes pulseCard {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); filter: drop-shadow(0 0 8px rgba(184, 151, 88, 0.4)); }
+}
+
+.btn-cart-empty {
+  opacity: 0.9;
+  cursor: pointer;
+}
+
 /* --------------------------------------------------------------------------
    MODALES (CLUB MJ, RASTREO, CONFIRMACIÓN)
    -------------------------------------------------------------------------- */

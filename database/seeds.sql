@@ -20,7 +20,7 @@ INSERT INTO productos (id, categoria_id, nombre, descripcion, precio, tiempo_pre
 -- Bebidas Calientes
 (1, 1, 'Americano de Especialidad (12 oz)', 'Granos selectos con notas a chocolate y avellana, tostado medio artesanal.', 38.00, 3, 1, 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80', 1),
 (2, 1, 'Caramel Macchiato Latte (16 oz)', 'Espresso doble, leche vaporizada aterciopelada y jarabe de caramelo casero.', 58.00, 4, 1, 'https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600&auto=format&fit=crop&q=80', 1),
-(3, 1, 'Cappuccino Italiano Clásico (12 oz)', 'Equilibrio perfecto 1:1:1 de espresso, leche cremada y abundante microespuma.', 48.00, 4, 1, 'https://images.unsplash.com/photo-1572442388796-11668ba67e53?w=600&auto=format&fit=crop&q=80', 0),
+(3, 1, 'Cappuccino Italiano Clásico (12 oz)', 'Equilibrio perfecto 1:1:1 de espresso, leche cremada y abundante microespuma.', 48.00, 4, 1, 'https://images.unsplash.com/photo-1534778101976-62847782c213?w=600&auto=format&fit=crop&q=80', 0),
 (4, 1, 'Dirty Chai Latte (16 oz)', 'Té chai especiado con cardamomo y canela, coronado con un shot de espresso.', 62.00, 5, 1, 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80', 1),
 
 -- Frappés & Bebidas Frías
