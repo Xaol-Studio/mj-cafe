@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MJ CAFÉ — Visor de Base de Datos SQLite en Vivo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    :root {
+      --bg-canvas: #0D0C0A;
+      --bg-surface: #141210;
+      --bg-elevated: #1D1A16;
+      --border-subtle: #262420;
+      --gold-primary: #B89758;
+      --gold-champagne: #D4B87A;
+      --wine-alert: #611624;
+      --forest-green: #1B3B2B;
+      --green-accent: #4ADE80;
+      --text-main: #FAF8F5;
+      --text-muted: #8A857C;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .db-header {
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 16px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .db-title-group h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin: 0;
+      color: var(--text-main);
+      letter-spacing: -0.01em;
+    }
+
+    .db-badge-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      color: var(--gold-champagne);
+      background: rgba(184, 151, 88, 0.12);
+      border: 1px solid rgba(184, 151, 88, 0.25);
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-top: 4px;
+      display: inline-block;
+    }
+
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--green-accent);
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid rgba(74, 222, 128, 0.25);
+      padding: 6px 12px;
+      border-radius: 999px;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--green-accent);
+      box-shadow: 0 0 8px var(--green-accent);
+      animation: pulseLive 1.5s infinite;
+    }
+
+    @keyframes pulseLive {
+      0% { opacity: 0.4; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0.4; transform: scale(0.9); }
+    }
+
+    .db-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-db {
+      background-color: var(--bg-elevated);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+      padding: 8px 14px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-db:hover {
+      border-color: var(--gold-primary);
+      color: var(--gold-champagne);
+    }
+
+    .btn-db-primary {
+      background: var(--gold-primary);
+      color: #0D0C0A;
+      border-color: var(--gold-primary);
+    }
+
+    .btn-db-primary:hover {
+      background: var(--gold-champagne);
+      color: #0D0C0A;
+    }
+
+    /* CONTENEDOR PRINCIPAL */
+    .db-container {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px;
+      box-sizing: border-box;
+      flex-grow: 1;
+    }
+
+    /* METRICAS */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background: var(--gold-primary);
+    }
+
+    .stat-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .stat-sub {
+      font-size: 0.75rem;
+      color: var(--gold-champagne);
+      margin-top: 4px;
+    }
+
+    /* PESTAÑAS */
+    .tabs-nav {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      position: relative;
+      white-space: nowrap;
+      transition: color 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      color: var(--gold-champagne);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--gold-primary);
+    }
+
+    .tab-badge {
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .tab-btn.active .tab-badge {
+      border-color: rgba(184, 151, 88, 0.4);
+      color: var(--gold-champagne);
+    }
+
+    /* TABLAS DE DATOS */
+    .table-container {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow-x: auto;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    table.db-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.86rem;
+    }
+
+    table.db-table th {
+      background: var(--bg-elevated);
+      color: var(--gold-champagne);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
+    }
+
+    table.db-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(38, 36, 32, 0.6);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    table.db-table tbody tr:hover {
+      background-color: rgba(184, 151, 88, 0.04);
+    }
+
+    table.db-table tbody tr.new-row {
+      animation: flashGold 2s ease-out;
+    }
+
+    @keyframes flashGold {
+      0% { background-color: rgba(184, 151, 88, 0.35); }
+      100% { background-color: transparent; }
+    }
+
+    .code-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--gold-champagne);
+    }
+
+    .badge-status {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-pendiente {
+      background: rgba(97, 22, 36, 0.3);
+      color: #F87171;
+      border: 1px solid rgba(97, 22, 36, 0.6);
+    }
+
+    .badge-preparando {
+      background: rgba(184, 151, 88, 0.2);
+      color: var(--gold-champagne);
+      border: 1px solid rgba(184, 151, 88, 0.4);
+    }
+
+    .badge-listo {
+      background: rgba(74, 222, 128, 0.15);
+      color: #4ADE80;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .badge-entregado {
+      background: rgba(115, 110, 102, 0.2);
+      color: #A8A29E;
+      border: 1px solid rgba(115, 110, 102, 0.4);
+    }
+
+    .stamp-dots {
+      display: inline-flex;
+      gap: 4px;
+    }
+
+    .stamp-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      font-size: 0.6rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+    }
+
+    .stamp-dot.active {
+      background: var(--gold-primary);
+      border-color: var(--gold-primary);
+      color: #0D0C0A;
+      font-weight: 700;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="db-header">
+    <div class="db-title-group">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <h1>MJ CAFÉ — Visor de Base de Datos</h1>
+        <span class="live-indicator">
+          <span class="pulse-dot"></span>
+          <span>SQLite en Vivo</span>
+        </span>
+      </div>
+      <div class="db-badge-path" id="db-file-path">database/mj_cafe.sqlite</div>
+    </div>
+
+    <div class="db-actions">
+      <span style="font-size: 0.78rem; color: var(--text-muted);" id="sync-timer">Refrescando cada 1.5s</span>
+      <button class="btn-db" id="btn-manual-refresh">
+        🔄 Refrescar
+      </button>
+      <a href="index.html" target="_blank" class="btn-db btn-db-primary">
+        🛍️ Abrir Menú y Hacer Pedido
+      </a>
+      <a href="cocina.html" target="_blank" class="btn-db">
+        👨‍🍳 Cocina KDS
+      </a>
+    </div>
+  </header>
+
+  <main class="db-container">
+
+    <!-- METRICAS EN VIVO -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Pedidos Registrados</div>
+        <div class="stat-value" id="stat-total-pedidos">0</div>
+        <div class="stat-sub">Persistidos en SQLite</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Ingresos Totales en Barra</div>
+        <div class="stat-value" id="stat-ingresos">$0.00</div>
+        <div class="stat-sub">Ventas acumuladas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Comandas en Preparación</div>
+        <div class="stat-value" id="stat-pendientes">0</div>
+        <div class="stat-sub">Pendientes de entrega</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Clientes Club MJ</div>
+        <div class="stat-value" id="stat-clientes">0</div>
+        <div class="stat-sub">Acumulando sellos</div>
+      </div>
+    </section>
+
+    <!-- NAVEGACIÓN DE TABLAS -->
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="pedidos">
+        <span>📋 Tabla `pedidos`</span>
+        <span class="tab-badge" id="badge-count-pedidos">0</span>
+      </button>
+      <button class="tab-btn" data-tab="detalles">
+        <span>🧾 Tabla `pedido_detalles`</span>
+        <span class="tab-badge" id="badge-count-detalles">0</span>
+      </button>
+      <button class="tab-btn" data-tab="lealtad">
+        <span>⭐ Tabla `clientes_lealtad`</span>
+        <span class="tab-badge" id="badge-count-lealtad">0</span>
+      </button>
+      <button class="tab-btn" data-tab="productos">
+        <span>☕ Tabla `productos`</span>
+        <span class="tab-badge" id="badge-count-productos">0</span>
+      </button>
+    </nav>
+
+    <!-- TAB 1: PEDIDOS -->
+    <div class="tab-content" id="tab-pedidos">
+      <div class="table-container">
+        <table class="db-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Folio</th>
+              <th>Cliente</th>
+              <th>Teléfono</th>
+              <th>Recolección</th>
+              <th>Estado</th>
+              <th>Total</th>
+              <th>Método</th>
+              <th>Notas</th>
+              <th>Fecha y Hora</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-pedidos">
+            <tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 32px;">Cargando pedidos de SQLite...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 2: DETALLES -->
+    <div class="tab-content" id="tab-detalles" style="display: none;">
+      <div class="table-container">
+        <table class="db-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Folio Pedido</th>
+              <th>Producto</th>
+              <th>Cant.</th>
+              <th>P. Unitario</th>
+              <th>Subtotal</th>
+              <th>Personalizaciones</th>
+              <th>Creado</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-detalles">
+            <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 32px;">Cargando detalles...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: LEALTAD -->
+    <div class="tab-content" id="tab-lealtad" style="display: none;">
+      <div class="table-container">
+        <table class="db-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>WhatsApp</th>
+              <th>Carrera</th>
+              <th>Sellos (1-6)</th>
+              <th>Recompensas Canjeadas</th>
+              <th>Total Visitas</th>
+              <th>Última Visita</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-lealtad">
+            <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 32px;">Cargando clientes...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 4: PRODUCTOS -->
+    <div class="tab-content" id="tab-productos" style="display: none;">
+      <div class="table-container">
+        <table class="db-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Categoría</th>
+              <th>Nombre</th>
+              <th>Precio</th>
+              <th>Prep (min)</th>
+              <th>Popular</th>
+              <th>Disponible</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-productos">
+            <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 32px;">Cargando productos...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      MJ Café Express • UNAM FES Cuautitlán Campo 4 • Conexión directa a <code>database/mj_cafe.sqlite</code>
+    </div>
+
+  </main>
+
+  <script>
+    let ultimosIds = new Set();
+    let primerCarga = true;
+
+    // Manejo de pestañas
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+
+        btn.classList.add('active');
+        const tabId = 'tab-' + btn.dataset.tab;
+        const target = document.getElementById(tabId);
+        if (target) target.style.display = 'block';
+      });
+    });
+
+    async function cargarDatosBD() {
+      try {
+        const res = await fetch('/api/db_data');
+        if (!res.ok) throw new Error('Error de red: ' + res.status);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Error al obtener datos');
+
+        actualizarMetricas(data.stats);
+        renderizarPedidos(data.pedidos);
+        renderizarDetalles(data.pedido_detalles);
+        renderizarLealtad(data.clientes_lealtad);
+        renderizarProductos(data.productos);
+
+        document.getElementById('sync-timer').textContent = 'Última sinc: ' + new Date().toLocaleTimeString();
+        primerCarga = false;
+      } catch (err) {
+        console.warn('Visor BD:', err);
+        document.getElementById('sync-timer').textContent = 'Reintentando conexión...';
+      }
+    }
+
+    function actualizarMetricas(stats) {
+      if (!stats) return;
+      document.getElementById('stat-total-pedidos').textContent = stats.total_pedidos || 0;
+      document.getElementById('stat-ingresos').textContent = `$${Number(stats.ingresos_totales || 0).toFixed(2)} MXN`;
+      document.getElementById('stat-pendientes').textContent = stats.pendientes || 0;
+      document.getElementById('stat-clientes').textContent = stats.clientes_lealtad || 0;
+
+      document.getElementById('badge-count-pedidos').textContent = stats.total_pedidos || 0;
+      document.getElementById('badge-count-lealtad').textContent = stats.clientes_lealtad || 0;
+    }
+
+    function renderizarPedidos(pedidos) {
+      const tbody = document.getElementById('tbody-pedidos');
+      if (!pedidos || pedidos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 32px;">Aún no hay pedidos en la base de datos.</td></tr>';
+        return;
+      }
+
+      const etiquetas = {
+        'pendiente': '<span class="badge-status badge-pendiente">En Cola</span>',
+        'preparando': '<span class="badge-status badge-preparando">Preparando</span>',
+        'listo_para_recoger': '<span class="badge-status badge-listo">Listo</span>',
+        'entregado': '<span class="badge-status badge-entregado">Entregado</span>',
+        'cancelado': '<span class="badge-status" style="background: #262420; color: #8A857C;">Cancelado</span>'
+      };
+
+      tbody.innerHTML = pedidos.map(p => {
+        const esNuevo = !primerCarga && !ultimosIds.has(p.id);
+        if (!ultimosIds.has(p.id)) ultimosIds.add(p.id);
+
+        return `
+          <tr class="${esNuevo ? 'new-row' : ''}">
+            <td class="code-val">#${p.id}</td>
+            <td><strong class="code-val" style="color: var(--gold-primary); font-size: 0.95rem;">${p.folio}</strong></td>
+            <td style="font-weight: 600;">${p.cliente_nombre}</td>
+            <td class="code-val">${p.cliente_telefono}</td>
+            <td style="font-size: 0.8rem; color: var(--text-muted);">${p.hora_recoleccion_estimada || '-'}</td>
+            <td>${etiquetas[p.estado] || p.estado}</td>
+            <td class="code-val" style="font-weight: 700; color: var(--gold-champagne);">$${Number(p.total).toFixed(2)}</td>
+            <td style="font-size: 0.78rem;">${p.metodo_pago === 'efectivo_en_barra' ? 'Efectivo en Barra' : 'SPEI / Dimo'}</td>
+            <td style="font-size: 0.78rem; color: var(--text-muted); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              ${p.notas || '-'}
+            </td>
+            <td style="font-size: 0.76rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">
+              ${p.created_at}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderizarDetalles(detalles) {
+      const tbody = document.getElementById('tbody-detalles');
+      document.getElementById('badge-count-detalles').textContent = (detalles || []).length;
+
+      if (!detalles || detalles.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 32px;">Sin detalles registrados.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = detalles.map(d => `
+        <tr>
+          <td class="code-val">#${d.id}</td>
+          <td class="code-val" style="color: var(--gold-primary);">${d.pedido_folio || '#' + d.pedido_id}</td>
+          <td style="font-weight: 600;">${d.producto_nombre || 'Producto #' + d.producto_id}</td>
+          <td class="code-val" style="text-align: center; font-weight: 700;">${d.cantidad}</td>
+          <td class="code-val">$${Number(d.precio_unitario).toFixed(2)}</td>
+          <td class="code-val" style="font-weight: 700; color: var(--gold-champagne);">$${Number(d.subtotal).toFixed(2)}</td>
+          <td style="font-size: 0.8rem; color: var(--gold-champagne);">${d.personalizaciones ? '<em>' + d.personalizaciones + '</em>' : '-'}</td>
+          <td style="font-size: 0.76rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">${d.created_at}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderizarLealtad(clientes) {
+      const tbody = document.getElementById('tbody-lealtad');
+      if (!clientes || clientes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 32px;">Sin clientes registrados en Club MJ.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = clientes.map(c => {
+        const sellos = Math.min(6, Number(c.sellos_acumulados || 0));
+        let dots = '';
+        for (let i = 1; i <= 6; i++) {
+          dots += `<span class="stamp-dot ${i <= sellos ? 'active' : ''}">${i === 6 ? '★' : i}</span>`;
+        }
+
+        return `
+          <tr>
+            <td class="code-val">#${c.id}</td>
+            <td style="font-weight: 600;">${c.nombre}</td>
+            <td class="code-val">${c.telefono}</td>
+            <td style="font-size: 0.82rem; color: var(--text-muted);">${c.carrera || 'FES Cuautitlán'}</td>
+            <td><div class="stamp-dots">${dots}</div></td>
+            <td class="code-val" style="text-align: center;">${c.recompensas_canjeadas || 0} cortesías</td>
+            <td class="code-val" style="text-align: center;">${c.total_visitas || 1} visitas</td>
+            <td style="font-size: 0.76rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">${c.last_visit_at || c.created_at}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderizarProductos(productos) {
+      const tbody = document.getElementById('tbody-productos');
+      document.getElementById('badge-count-productos').textContent = (productos || []).length;
+
+      if (!productos || productos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 32px;">Sin productos en catálogo.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = productos.map(p => `
+        <tr>
+          <td class="code-val">#${p.id}</td>
+          <td style="font-size: 0.8rem; color: var(--gold-champagne);">${p.categoria_nombre || 'Especialidad'}</td>
+          <td style="font-weight: 600;">${p.nombre}</td>
+          <td class="code-val" style="font-weight: 700; color: var(--gold-primary);">$${Number(p.precio).toFixed(2)} MXN</td>
+          <td class="code-val" style="text-align: center;">${p.tiempo_prep_min || 4} min</td>
+          <td style="text-align: center;">${p.es_popular ? '⭐ Sí' : '—'}</td>
+          <td style="text-align: center;">${p.disponible ? '<span style="color: #4ADE80;">✓ Activo</span>' : '<span style="color: #F87171;">Agotado</span>'}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Inicialización y polling
+    document.getElementById('btn-manual-refresh').addEventListener('click', cargarDatosBD);
+    cargarDatosBD();
+    setInterval(cargarDatosBD, 1500);
+  </script>
+</body>
+</html>
