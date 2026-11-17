@@ -549,6 +549,7 @@
 
   </main>
 
+  <script src="../js/api.js"></script>
   <script>
     let ultimosIds = new Set();
     let primerCarga = true;
@@ -567,23 +568,95 @@
     });
 
     async function cargarDatosBD() {
+      // 1. Intentar cargar desde el backend nativo SQLite si está disponible
       try {
         const res = await fetch('/api/db_data');
-        if (!res.ok) throw new Error('Error de red: ' + res.status);
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || 'Error al obtener datos');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok) {
+            const badgePath = document.getElementById('db-file-path');
+            if (badgePath) badgePath.textContent = 'Conectado a SQLite Local (database/mj_cafe.sqlite)';
 
-        actualizarMetricas(data.stats);
-        renderizarPedidos(data.pedidos);
-        renderizarDetalles(data.pedido_detalles);
-        renderizarLealtad(data.clientes_lealtad);
-        renderizarProductos(data.productos);
+            actualizarMetricas(data.stats);
+            renderizarPedidos(data.pedidos);
+            renderizarDetalles(data.pedido_detalles);
+            renderizarLealtad(data.clientes_lealtad);
+            renderizarProductos(data.productos);
 
-        document.getElementById('sync-timer').textContent = 'Última sinc: ' + new Date().toLocaleTimeString();
+            document.getElementById('sync-timer').textContent = 'Última sinc: ' + new Date().toLocaleTimeString();
+            primerCarga = false;
+            return;
+          }
+        }
+      } catch (err) {
+        // En Vercel /api/db_data no existe, pasamos al almacenamiento unificado
+      }
+
+      // 2. Si estamos en Vercel, cargar los pedidos reales guardados en la sesión del navegador
+      cargarDesdeStorageVercel();
+    }
+
+    function cargarDesdeStorageVercel() {
+      try {
+        const pedidos = typeof leerPedidosLocal === 'function' ? leerPedidosLocal() : [];
+        const lealtadObj = typeof leerLealtadLocal === 'function' ? leerLealtadLocal() : {};
+        const clientes = Object.values(lealtadObj).map((c, i) => ({
+          id: c.id || i + 1,
+          nombre: c.nombre,
+          telefono: c.telefono,
+          carrera: c.carrera || 'FES Cuautitlán',
+          sellos_acumulados: c.sellos || 0,
+          recompensas_canjeadas: c.recompensas_canjeadas || 0,
+          total_visitas: c.total_visitas || 1,
+          last_visit_at: c.last_visit_at || '-'
+        }));
+
+        const prods = (typeof CATALOGO_INICIAL !== 'undefined' && CATALOGO_INICIAL.productos) 
+          ? CATALOGO_INICIAL.productos.map(p => ({
+              ...p,
+              categoria_nombre: p.categoria?.nombre || 'Especialidad'
+            }))
+          : [];
+
+        // Desempaquetar detalles de cada pedido
+        const detalles = [];
+        pedidos.forEach(p => {
+          (p.items || []).forEach((item, idx) => {
+            detalles.push({
+              id: `${p.id}-${idx + 1}`,
+              pedido_id: p.id,
+              pedido_folio: p.folio,
+              producto_id: item.producto_id,
+              producto_nombre: item.producto_nombre || item.nombre,
+              cantidad: item.cantidad,
+              precio_unitario: item.precio_unitario || item.precio,
+              subtotal: item.subtotal || ((item.precio_unitario || item.precio || 0) * item.cantidad),
+              personalizaciones: item.personalizaciones || '',
+              created_at: p.created_at
+            });
+          });
+        });
+
+        const stats = {
+          total_pedidos: pedidos.length,
+          ingresos_totales: pedidos.reduce((acc, p) => p.estado !== 'cancelado' ? acc + Number(p.total || 0) : acc, 0),
+          pendientes: pedidos.filter(p => ['pendiente', 'preparando'].includes(p.estado)).length,
+          clientes_lealtad: clientes.length
+        };
+
+        const badgePath = document.getElementById('db-file-path');
+        if (badgePath) badgePath.textContent = 'Base de Datos Vercel (Cloud Client-Side Storage)';
+
+        actualizarMetricas(stats);
+        renderizarPedidos(pedidos);
+        renderizarDetalles(detalles);
+        renderizarLealtad(clientes);
+        renderizarProductos(prods);
+
+        document.getElementById('sync-timer').textContent = 'Vercel sinc: ' + new Date().toLocaleTimeString();
         primerCarga = false;
       } catch (err) {
-        console.warn('Visor BD:', err);
-        document.getElementById('sync-timer').textContent = 'Reintentando conexión...';
+        console.error('Error cargando storage Vercel:', err);
       }
     }
 
