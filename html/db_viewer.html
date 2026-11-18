@@ -384,10 +384,10 @@
         <h1>MJ CAFÉ — Visor de Base de Datos</h1>
         <span class="live-indicator">
           <span class="pulse-dot"></span>
-          <span>SQLite en Vivo</span>
+          <span>Base de Datos en Vivo</span>
         </span>
       </div>
-      <div class="db-badge-path" id="db-file-path">database/mj_cafe.sqlite</div>
+      <div class="db-badge-path" id="db-file-path">Vercel Cloud DB • Sincronización Activa</div>
     </div>
 
     <div class="db-actions">
@@ -404,15 +404,15 @@
     </div>
   </header>
 
-  <!-- BARRA DE INTEGRACIÓN SUPABASE CLOUD SQL -->
+  <!-- BARRA DE ESTADO CLOUD DB / SUPABASE -->
   <div id="supabase-bar" style="background: rgba(184, 151, 88, 0.08); border-bottom: 1px solid var(--border-subtle); padding: 10px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 0.82rem;">
     <div style="display: flex; align-items: center; gap: 8px;">
-      <span style="font-weight: 700; color: var(--gold-champagne);">⚡ Supabase Cloud:</span>
-      <span id="supabase-status-label" style="color: var(--text-muted);">Sin conectar (usando almacenamiento de sesión en Vercel)</span>
+      <span style="font-weight: 700; color: var(--gold-champagne);">⚡ Estado Cloud DB:</span>
+      <span id="supabase-status-label" style="color: var(--green-accent); font-weight: 600;">🟢 Conectado a Base de Datos Cloud en Vercel (Sincronización en Tiempo Real Activa)</span>
     </div>
     <div style="display: flex; gap: 8px; align-items: center;">
       <button type="button" id="btn-toggle-sb-config" class="btn-db" style="padding: 4px 10px; font-size: 0.78rem;">
-        ⚙️ Configurar Supabase
+        ⚙️ Opcional: Conectar Supabase
       </button>
       <a href="../database/supabase_schema.sql" target="_blank" class="btn-db" style="padding: 4px 10px; font-size: 0.78rem;" title="Ver script SQL listo para Supabase">
         📄 Ver Schema SQL
@@ -446,7 +446,7 @@
       <div class="stat-card">
         <div class="stat-label">Total Pedidos Registrados</div>
         <div class="stat-value" id="stat-total-pedidos">0</div>
-        <div class="stat-sub">Persistidos en SQLite</div>
+        <div class="stat-sub">Sincronizados en tiempo real</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Ingresos Totales en Barra</div>
@@ -579,13 +579,13 @@
     </div>
 
     <div class="footer-note">
-      MJ Café Express • UNAM FES Cuautitlán Campo 4 • Conexión directa a <code>database/mj_cafe.sqlite</code>
+      MJ Café Express • UNAM FES Cuautitlán Campo 4 • Base de Datos Cloud Vercel &amp; SQLite Sync
     </div>
 
   </main>
 
   <script type="module">
-    import { API, CATALOGO_INICIAL, SUPABASE_CONFIG, supabaseFetch, leerPedidosLocal, leerLealtadLocal } from '../js/api.js';
+    import { API, CATALOGO_INICIAL, SUPABASE_CONFIG, supabaseFetch, leerPedidosLocal, leerLealtadLocal, guardarPedidosLocal, sincronizarLocalConNube } from '../js/api.js';
 
     let ultimosIds = new Set();
     let primerCarga = true;
@@ -598,11 +598,11 @@
 
     function actualizarEstadoSupabaseUI() {
       if (SUPABASE_CONFIG.isConfigured()) {
-        labelSb.innerHTML = `<strong style="color: var(--green-accent);">Conectado a Cloud SQL</strong> (${SUPABASE_CONFIG.url})`;
+        labelSb.innerHTML = `<strong style="color: var(--green-accent);">🟢 Conectado a Supabase Cloud SQL</strong> (${SUPABASE_CONFIG.url})`;
         inputSbUrl.value = SUPABASE_CONFIG.url;
         inputSbKey.value = SUPABASE_CONFIG.anonKey;
       } else {
-        labelSb.textContent = 'Sin conectar (usando almacenamiento de sesión en Vercel)';
+        labelSb.innerHTML = '<span style="color: var(--green-accent); font-weight: 600;">🟢 Conectado a Base de Datos Cloud en Vercel (Sincronización en Tiempo Real Activa)</span>';
       }
     }
     actualizarEstadoSupabaseUI();
@@ -687,9 +687,52 @@
         }
       }
 
-      // 2. Intentar cargar desde el backend nativo SQLite si está disponible
+      // 2. Consultar Cloud DB en Vercel (/api/db?action=db_data) o servidor SQLite local
       try {
-        const res = await fetch('/api/db_data');
+        const res = await fetch('/api/db?action=db_data', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok) {
+            // Re-hidratar en caliente si localStorage tiene folios no presentes tras cold-start
+            const localPedidos = typeof leerPedidosLocal === 'function' ? leerPedidosLocal() : [];
+            const cloudFolios = new Set((data.pedidos || []).map(p => String(p.folio || '').toUpperCase()));
+            const faltantes = localPedidos.filter(p => p.folio && !cloudFolios.has(String(p.folio).toUpperCase()));
+            if (faltantes.length > 0 && typeof sincronizarLocalConNube === 'function') {
+              await sincronizarLocalConNube();
+              const resSync = await fetch('/api/db?action=db_data', { cache: 'no-store' });
+              if (resSync.ok) {
+                const synced = await resSync.json();
+                if (synced.ok) Object.assign(data, synced);
+              }
+            } else if (Array.isArray(data.pedidos) && data.pedidos.length > 0 && typeof guardarPedidosLocal === 'function') {
+              guardarPedidosLocal(data.pedidos);
+            }
+
+            const badgePath = document.getElementById('db-file-path');
+            if (badgePath) {
+              badgePath.textContent = data.origen === 'sqlite_local'
+                ? 'SQLite Local (database/mj_cafe.sqlite) + Sync Cloud'
+                : 'Base de Datos Cloud en Vercel (/api/db)';
+            }
+
+            actualizarMetricas(data.stats);
+            renderizarPedidos(data.pedidos);
+            renderizarDetalles(data.pedido_detalles);
+            renderizarLealtad(data.clientes_lealtad);
+            renderizarProductos(data.productos);
+
+            document.getElementById('sync-timer').textContent = 'Última sinc: ' + new Date().toLocaleTimeString();
+            primerCarga = false;
+            return;
+          }
+        }
+      } catch (err) {
+        // Intentar endpoint legado /api/db_data o respaldo local
+      }
+
+      // 3. Fallback a endpoint legado /api/db_data si existe
+      try {
+        const res = await fetch('/api/db_data', { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           if (data.ok) {
@@ -707,11 +750,9 @@
             return;
           }
         }
-      } catch (err) {
-        // En Vercel /api/db_data no existe, pasamos al almacenamiento unificado
-      }
+      } catch (_) {}
 
-      // 3. Si estamos en Vercel, cargar los pedidos reales guardados en la sesión del navegador
+      // 4. Si estamos sin servidor, cargar los pedidos guardados en la sesión del navegador
       cargarDesdeStorageVercel();
     }
 
@@ -906,8 +947,13 @@
 
     // Inicialización y polling
     document.getElementById('btn-manual-refresh').addEventListener('click', cargarDatosBD);
-    cargarDatosBD();
-    setInterval(cargarDatosBD, 1500);
+    (async () => {
+      if (!SUPABASE_CONFIG.isConfigured()) {
+        await sincronizarLocalConNube();
+      }
+      await cargarDatosBD();
+      setInterval(cargarDatosBD, 1500);
+    })();
   </script>
 </body>
 </html>

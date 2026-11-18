@@ -4,7 +4,7 @@
  * Autores: Ian Miguel Delgado Huitron & Jorge Alberto Barrios Rosas
  */
 
-import { API } from './api.js';
+import { API, sincronizarLocalConNube } from './api.js';
 
 const AppState = {
   categorias: [],
@@ -18,6 +18,7 @@ const AppState = {
 document.addEventListener('DOMContentLoaded', () => {
   inicializarEventos();
   cargarMenu();
+  sincronizarLocalConNube();
 });
 
 function inicializarEventos() {

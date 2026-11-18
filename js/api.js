@@ -4,6 +4,7 @@
  */
 
 export const API_BASE_URL = '../backend/api';
+export const CLOUD_API_URL = '/api/db';
 export const STORAGE_KEY_PEDIDOS = 'mj_cafe_pedidos_v1';
 export const STORAGE_KEY_LEALTAD = 'mj_cafe_lealtad_v1';
 
@@ -320,8 +321,80 @@ async function fetchJsonSeguro(url, options = {}) {
   return await response.json();
 }
 
+export async function fetchCloudApi(action, queryParams = '', options = {}) {
+  const qs = queryParams ? `&${queryParams.replace(/^&/, '')}` : '';
+  const url = `${CLOUD_API_URL}?action=${encodeURIComponent(action)}${qs}`;
+  const response = await fetch(url, options);
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new Error('Cloud API no disponible en este entorno');
+  }
+  const data = await response.json();
+  if (!response.ok) {
+    const err = new Error(data.error || `Error HTTP ${response.status}`);
+    err.status = response.status;
+    err.payload = data;
+    throw err;
+  }
+  return data;
+}
+
+export async function sincronizarLocalConNube() {
+  try {
+    const localPedidos = leerPedidosLocal();
+    const localLealtad = leerLealtadLocal();
+    const clientesArr = Object.values(localLealtad || {});
+
+    const data = await fetchCloudApi('sync', '', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pedidos: localPedidos,
+        clientes_lealtad: clientesArr
+      })
+    });
+
+    if (data && data.ok && Array.isArray(data.pedidos)) {
+      guardarPedidosLocal(data.pedidos);
+      if (Array.isArray(data.clientes_lealtad)) {
+        const mapa = {};
+        data.clientes_lealtad.forEach(c => {
+          if (c.telefono) {
+            mapa[c.telefono] = {
+              id: c.id,
+              nombre: c.nombre,
+              telefono: c.telefono,
+              carrera: c.carrera || 'FES Cuautitlán Campo 4',
+              sellos: Number(c.sellos_acumulados ?? c.sellos ?? 0),
+              recompensas_canjeadas: Number(c.recompensas_canjeadas || 0),
+              total_visitas: Number(c.total_visitas || 1)
+            };
+          }
+        });
+        guardarLealtadLocal(mapa);
+      }
+    }
+    return data;
+  } catch (err) {
+    console.warn('No se pudo sincronizar con la nube:', err.message);
+    return null;
+  }
+}
+
 export const API = {
   async obtenerProductos(categoriaId = null) {
+    // 1. Intentar Cloud API (/api/db)
+    try {
+      const qs = categoriaId ? `categoria=${encodeURIComponent(categoriaId)}` : '';
+      const data = await fetchCloudApi('productos', qs);
+      if (data && data.ok) {
+        return { ok: true, origen: 'vercel_cloud_db', data };
+      }
+    } catch {
+      // Continuar con backend PHP o catálogo inicial
+    }
+
+    // 2. Intentar backend PHP local
     try {
       const url = categoriaId
         ? `${API_BASE_URL}/productos.php?categoria=${categoriaId}`
@@ -462,7 +535,65 @@ export const API = {
       }
     }
 
-    // 2. Intentar backend PHP local
+    // 2. Priorizar Cloud API (/api/db) en Vercel o dev_server
+    try {
+      const data = await fetchCloudApi('crear_pedido', '', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pedidoPayload)
+      });
+      if (data && data.ok) {
+        // Mantener copia sincronizada en localStorage
+        try {
+          const pedidos = leerPedidosLocal();
+          const tel = String(pedidoPayload.cliente_telefono || '').replace(/\D/g, '');
+          const nuevoLocal = {
+            id: data.id || data.pedido_id || (pedidos.length ? Math.max(...pedidos.map(p => Number(p.id))) + 1 : 1),
+            folio: data.folio,
+            cliente_nombre: pedidoPayload.cliente_nombre,
+            cliente_telefono: tel,
+            hora_recoleccion_estimada: data.hora_recoleccion || pedidoPayload.hora_recoleccion,
+            estado: data.estado || 'pendiente',
+            total: data.total,
+            metodo_pago: pedidoPayload.metodo_pago,
+            notas: pedidoPayload.notas || '',
+            created_at: new Date().toISOString(),
+            items: data.items || []
+          };
+          if (!pedidos.some(p => String(p.folio).toUpperCase() === String(data.folio).toUpperCase())) {
+            pedidos.unshift(nuevoLocal);
+            guardarPedidosLocal(pedidos);
+          }
+
+          const lealtad = leerLealtadLocal();
+          if (!lealtad[tel]) {
+            lealtad[tel] = {
+              id: Object.keys(lealtad).length + 1,
+              nombre: pedidoPayload.cliente_nombre,
+              telefono: tel,
+              carrera: 'FES Cuautitlán Campo 4',
+              sellos: data.sellos_acumulados || 1,
+              recompensas_canjeadas: 0,
+              total_visitas: 1
+            };
+          } else {
+            lealtad[tel].nombre = pedidoPayload.cliente_nombre || lealtad[tel].nombre;
+            lealtad[tel].sellos = data.sellos_acumulados || ((lealtad[tel].sellos || 0) + 1);
+            lealtad[tel].total_visitas = (lealtad[tel].total_visitas || 0) + 1;
+          }
+          guardarLealtadLocal(lealtad);
+        } catch (_) {}
+
+        return { ok: true, origen: data.origen || 'vercel_cloud_db', data };
+      }
+    } catch (err) {
+      if (err.status === 422) {
+        return { ok: false, error: err.message };
+      }
+      console.warn('Cloud API crear_pedido no disponible, usando fallback:', err.message);
+    }
+
+    // 3. Intentar backend PHP local
     try {
       const data = await fetchJsonSeguro(`${API_BASE_URL}/pedidos.php`, {
         method: 'POST',
@@ -573,6 +704,21 @@ export const API = {
     }
 
     try {
+      const data = await fetchCloudApi('pedido_folio', `folio=${encodeURIComponent(folioLimpio)}`);
+      if (data && data.ok) return data;
+    } catch (err) {
+      if (err.status === 404) {
+        // Revisar también respaldo local antes de declarar no encontrado
+        const pedidos = leerPedidosLocal();
+        const localHit = pedidos.find(p => String(p.folio).toUpperCase() === folioLimpio);
+        if (localHit) {
+          return { ok: true, pedido: { ...localHit, detalles: localHit.items || [] } };
+        }
+        return { ok: false, error: err.message };
+      }
+    }
+
+    try {
       return await fetchJsonSeguro(`${API_BASE_URL}/pedidos.php?folio=${encodeURIComponent(folioLimpio)}`);
     } catch {
       const pedidos = leerPedidosLocal();
@@ -613,6 +759,33 @@ export const API = {
         }
       } catch (err) {
         console.warn('Lealtad Supabase error:', err);
+      }
+    }
+
+    try {
+      const data = await fetchCloudApi('lealtad', `telefono=${encodeURIComponent(tel)}`);
+      if (data && data.ok) return data;
+    } catch (err) {
+      if (err.status === 404 || err.status === 422) {
+        const lealtad = leerLealtadLocal();
+        const cliente = lealtad[tel];
+        if (cliente) {
+          return {
+            ok: true,
+            encontrado: true,
+            cliente: {
+              ...cliente,
+              sellos_meta: 6,
+              sellos_faltantes: Math.max(0, 6 - cliente.sellos),
+              tiene_recompensa_disponible: cliente.sellos >= 6
+            }
+          };
+        }
+        return {
+          ok: false,
+          encontrado: false,
+          mensaje: err.payload?.mensaje || err.message || 'Aún no hay sellos registrados con este número.'
+        };
       }
     }
 
@@ -674,6 +847,19 @@ export const API = {
     }
 
     try {
+      const data = await fetchCloudApi('canjear_lealtad', '', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefono: tel })
+      });
+      if (data && data.ok) return data;
+    } catch (err) {
+      if (err.status === 422) {
+        return { ok: false, error: err.message };
+      }
+    }
+
+    try {
       return await fetchJsonSeguro(`${API_BASE_URL}/lealtad.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -729,6 +915,13 @@ export const API = {
     }
 
     try {
+      const data = await fetchCloudApi('cocina');
+      if (data && data.ok) return data;
+    } catch {
+      // Continuar con PHP o respaldo local
+    }
+
+    try {
       return await fetchJsonSeguro(`${API_BASE_URL}/cocina.php`);
     } catch {
       const todos = leerPedidosLocal();
@@ -764,6 +957,25 @@ export const API = {
     }
 
     try {
+      const data = await fetchCloudApi('actualizar_cocina', '', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pedido_id: Number(pedidoId), nuevo_estado: nuevoEstado })
+      });
+      if (data && data.ok) {
+        const pedidos = leerPedidosLocal();
+        const idx = pedidos.findIndex(p => Number(p.id) === Number(pedidoId));
+        if (idx !== -1) {
+          pedidos[idx].estado = nuevoEstado;
+          guardarPedidosLocal(pedidos);
+        }
+        return data;
+      }
+    } catch {
+      // Continuar con PHP o respaldo local
+    }
+
+    try {
       return await fetchJsonSeguro(`${API_BASE_URL}/cocina.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -779,4 +991,5 @@ export const API = {
       return { ok: true, mensaje: `Estado actualizado a ${nuevoEstado}` };
     }
   }
+};
 };
