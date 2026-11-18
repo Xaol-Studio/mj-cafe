@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="/css/style.css?v=3">
   
   <style>
     body {
@@ -275,10 +275,10 @@
       <button id="btn-refresh-kds" class="btn btn-outline" style="padding: 7px 12px; font-size: 0.8rem;">
         Actualizar
       </button>
-      <a href="db_viewer.html" class="btn btn-outline" style="padding: 7px 12px; font-size: 0.8rem;" title="Ver registros en SQLite">
+      <a href="/html/db_viewer.html" class="btn btn-outline" style="padding: 7px 12px; font-size: 0.8rem;" title="Ver registros en SQLite">
         Base de Datos
       </a>
-      <a href="index.html" class="btn btn-primary" style="padding: 7px 14px; font-size: 0.8rem;">
+      <a href="/html/index.html" class="btn btn-primary" style="padding: 7px 14px; font-size: 0.8rem;">
         Volver a la Tienda
       </a>
     </div>
@@ -334,7 +334,7 @@
   </main>
 
   <script type="module">
-    import { API } from '../js/api.js';
+    import { API } from '/js/api.js?v=3';
 
     async function cargarPedidosKds() {
       const res = await API.obtenerPedidosCocina();

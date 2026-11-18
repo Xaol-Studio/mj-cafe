@@ -990,6 +990,7 @@ export const API = {
       }
       return { ok: true, mensaje: `Estado actualizado a ${nuevoEstado}` };
     }
-  }
-};
+  },
+
+  sincronizarLocalConNube
 };

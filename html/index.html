@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="/css/style.css?v=3">
 </head>
 <body>
 
@@ -35,11 +35,11 @@
           <span>Club MJ</span>
         </button>
 
-        <a href="cocina.html" class="btn btn-outline" style="font-size: 0.85rem;" title="Abrir pantalla de barista">
+        <a href="/html/cocina.html" class="btn btn-outline" style="font-size: 0.85rem;" title="Abrir pantalla de barista">
           <span>Cocina</span>
         </a>
 
-        <a href="db_viewer.html" class="btn btn-outline" style="font-size: 0.85rem;" title="Ver base de datos SQLite en vivo">
+        <a href="/html/db_viewer.html" class="btn btn-outline" style="font-size: 0.85rem;" title="Ver base de datos SQLite en vivo">
           <span>Base de Datos</span>
         </a>
 
@@ -80,7 +80,7 @@
   </section>
 
   <!-- FILTRO POR CATEGORÍAS & BUSCADOR -->
-  <main class="container">
+  <main class="container" id="menu">
     <div class="menu-filters-bar">
       <div class="menu-search-box">
         <input type="search" id="input-search-menu" class="form-control" placeholder="Buscar café, bagel o postre...">
@@ -409,7 +409,7 @@
     <button class="mob-nav-btn" id="mob-nav-loyalty" title="Club MJ Lealtad">
       <span class="mob-nav-label">Club MJ</span>
     </button>
-    <a href="cocina.html" class="mob-nav-btn" title="Pantalla Barista Cocina">
+    <a href="/html/cocina.html" class="mob-nav-btn" title="Pantalla Barista Cocina">
       <span class="mob-nav-label">Cocina</span>
     </a>
     <button class="mob-nav-btn" id="mob-nav-cart" title="Ver Carrito">
@@ -420,6 +420,6 @@
     </button>
   </nav>
 
-  <script type="module" src="../js/main.js"></script>
+  <script type="module" src="/js/main.js?v=3"></script>
 </body>
 </html>

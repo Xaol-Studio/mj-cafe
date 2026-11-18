@@ -4,7 +4,10 @@
   "rewrites": [
     { "source": "/", "destination": "/html/index" },
     { "source": "/cocina", "destination": "/html/cocina" },
-    { "source": "/menu", "destination": "/html/index" }
+    { "source": "/menu", "destination": "/html/index" },
+    { "source": "/db_viewer", "destination": "/html/db_viewer" },
+    { "source": "/db", "destination": "/html/db_viewer" },
+    { "source": "/visor", "destination": "/html/db_viewer" }
   ],
   "headers": [
     {

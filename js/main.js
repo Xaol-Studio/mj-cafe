@@ -4,7 +4,7 @@
  * Autores: Ian Miguel Delgado Huitron & Jorge Alberto Barrios Rosas
  */
 
-import { API, sincronizarLocalConNube } from './api.js';
+import { API } from './api.js?v=3';
 
 const AppState = {
   categorias: [],
@@ -18,7 +18,9 @@ const AppState = {
 document.addEventListener('DOMContentLoaded', () => {
   inicializarEventos();
   cargarMenu();
-  sincronizarLocalConNube();
+  if (typeof API.sincronizarLocalConNube === 'function') {
+    API.sincronizarLocalConNube();
+  }
 });
 
 function inicializarEventos() {
@@ -157,19 +159,26 @@ async function cargarMenu(categoriaId = null) {
   const grid = document.getElementById('products-grid');
   grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 48px; color: var(--color-text-muted);">Cargando catálogo de MJ Café...</div>';
 
-  const res = await API.obtenerProductos(categoriaId);
+  try {
+    const res = await API.obtenerProductos(categoriaId);
 
-  if (res.origen === 'backend_sql') {
-    console.info('%c[MJ Café]%c Conectado al backend SQLite/PDO', 'color: #B89758; font-weight: bold;', 'color: #FAF8F5;');
-  } else {
-    console.info('%c[MJ Café]%c Modo catálogo local activo', 'color: #B89758; font-weight: bold;', 'color: #FAF8F5;');
+    if (res.origen === 'vercel_cloud_db') {
+      console.info('%c[MJ Café]%c Conectado a Vercel Cloud DB', 'color: #B89758; font-weight: bold;', 'color: #FAF8F5;');
+    } else if (res.origen === 'backend_sql') {
+      console.info('%c[MJ Café]%c Conectado al backend SQLite/PDO', 'color: #B89758; font-weight: bold;', 'color: #FAF8F5;');
+    } else {
+      console.info('%c[MJ Café]%c Modo catálogo local activo', 'color: #B89758; font-weight: bold;', 'color: #FAF8F5;');
+    }
+
+    AppState.categorias = res?.data?.categorias || [];
+    AppState.productos = res?.data?.productos || [];
+
+    renderizarCategorias(AppState.categorias);
+    filtrarYRenderizarProductos();
+  } catch (err) {
+    console.error('[MJ Café] Error al cargar catálogo:', err);
+    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 48px; color: var(--color-text-muted);">No fue posible cargar el menú en este momento. Recarga la página para reintentar.</div>';
   }
-
-  AppState.categorias = res.data.categorias || [];
-  AppState.productos = res.data.productos || [];
-
-  renderizarCategorias(AppState.categorias);
-  filtrarYRenderizarProductos();
 }
 
 function renderizarCategorias(categorias) {
