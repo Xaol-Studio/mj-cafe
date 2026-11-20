@@ -35,14 +35,6 @@
           <span>Club MJ</span>
         </button>
 
-        <a href="/html/cocina.html" class="btn btn-outline" style="font-size: 0.85rem;" title="Abrir pantalla de barista">
-          <span>Cocina</span>
-        </a>
-
-        <a href="/html/db_viewer.html" class="btn btn-outline" style="font-size: 0.85rem;" title="Ver base de datos SQLite en vivo">
-          <span>Base de Datos</span>
-        </a>
-
         <button id="btn-open-cart" class="btn btn-cart">
           <span>Carrito</span>
           <span id="cart-counter" class="cart-count">0</span>
@@ -297,9 +289,9 @@
         <a id="btn-whatsapp-order" href="#" target="_blank" rel="noopener" class="btn btn-outline" style="width: 100%;">
           Enviar Comanda por WhatsApp
         </a>
-        <a href="cocina.html" class="btn btn-outline" style="width: 100%;">
-          Ver Pantalla de Cocina (KDS)
-        </a>
+        <button type="button" id="btn-track-from-confirm" class="btn btn-outline" style="width: 100%;">
+          Rastrear Estado del Pedido
+        </button>
         <button id="btn-close-confirmation" class="btn btn-primary" style="width: 100%;">Volver al menú</button>
       </div>
     </div>
@@ -409,9 +401,6 @@
     <button class="mob-nav-btn" id="mob-nav-loyalty" title="Club MJ Lealtad">
       <span class="mob-nav-label">Club MJ</span>
     </button>
-    <a href="/html/cocina.html" class="mob-nav-btn" title="Pantalla Barista Cocina">
-      <span class="mob-nav-label">Cocina</span>
-    </a>
     <button class="mob-nav-btn" id="mob-nav-cart" title="Ver Carrito">
       <span class="mob-nav-icon-wrapper">
         <span class="mob-nav-label">Carrito</span>
@@ -420,6 +409,6 @@
     </button>
   </nav>
 
-  <script type="module" src="/js/main.js?v=3"></script>
+  <script type="module" src="/js/main.js?v=4"></script>
 </body>
 </html>

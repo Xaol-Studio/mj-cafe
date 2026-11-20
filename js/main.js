@@ -107,6 +107,19 @@ function inicializarEventos() {
     document.getElementById('confirmation-modal').classList.remove('active');
   });
 
+  const btnTrackFromConfirm = document.getElementById('btn-track-from-confirm');
+  if (btnTrackFromConfirm && trackModal) {
+    btnTrackFromConfirm.addEventListener('click', () => {
+      document.getElementById('confirmation-modal').classList.remove('active');
+      const folioEl = document.getElementById('confirmed-folio');
+      if (inputTrackFolio && folioEl) {
+        inputTrackFolio.value = folioEl.textContent.trim();
+        buscarPedidoPorFolio();
+      }
+      trackModal.classList.add('active');
+    });
+  }
+
   // Botón para explorar menú desde carrito vacío
   const btnExplore = document.getElementById('btn-explore-menu-cart');
   if (btnExplore) {
