@@ -69,7 +69,7 @@ Reducir en más de un **60%** el tiempo de espera presencial en barra (pasando d
 
 | Dimensión Interna | Factores Clave |
 | :--- | :--- |
-| **Fortalezas** | • **Ubicación estratégica:** A 1 minuto del acceso vehicular de FES Cuautitlán Campo 4.<br>• **Canal propio sin intermediarios:** Evita comisiones del ~30% de plataformas externas de entrega.<br>• **Fidelización digital (Club MJ):** Acumulación automática por número telefónico y canje directo.<br>• **Resiliencia técnica:** Backend PHP/PDO con respaldo automático en navegador (`localStorage`) para demostraciones o contingencias de red. |
+| **Fortalezas** | • **Ubicación estratégica:** A 1 minuto del acceso vehicular de FES Cuautitlán Campo 4.<br>• **Recolección directa en barra sin filas en horas pico:** Operación 100% presencial en tienda (solo pick-up, sin repartidores ni intermediarios).<br>• **Fidelización digital (Club MJ):** Acumulación automática por número telefónico y canje directo.<br>• **Resiliencia técnica:** Backend PHP/PDO con respaldo automático en navegador (`localStorage`) para demostraciones o contingencias de red. |
 | **Debilidades** | • **Capacidad física en barra:** La máquina de espresso y la plancha tienen un límite de producción simultánea en horas pico (11:00–13:00 hrs).<br>• **Validación manual de pagos:** Los pagos en efectivo en barra y transferencias SPEI requieren confirmación visual del barista.<br>• **Dependencia de conectividad en local:** La sincronización de la terminal KDS depende de conexión estable a internet en el establecimiento. |
 
 ---

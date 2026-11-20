@@ -317,7 +317,7 @@
       <span class="kds-stat-value" id="stat-activos">0</span>
     </div>
     <div class="kds-stat-card">
-      <span class="kds-stat-label">Entregados Hoy</span>
+      <span class="kds-stat-label">Recogidos en Barra</span>
       <span class="kds-stat-value" id="stat-entregados">0</span>
     </div>
     <div class="kds-stat-card">
@@ -467,7 +467,7 @@
               <button class="btn btn-primary btn-action-state" style="background: var(--color-success); border-color: var(--color-success); color: #fff;" data-id="${p.id}" data-state="listo_para_recoger">Marcar Listo</button>
             ` : ''}
             ${p.estado === 'listo_para_recoger' ? `
-              <button class="btn btn-outline btn-action-state" data-id="${p.id}" data-state="entregado">Entregar Pedido</button>
+              <button class="btn btn-outline btn-action-state" data-id="${p.id}" data-state="entregado">Marcar Recogido</button>
             ` : ''}
           </div>
         `;
