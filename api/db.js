@@ -8,6 +8,15 @@ const fs = require('fs');
 const crypto = require('crypto');
 
 const TMP_DB_PATH = '/tmp/mj_cafe_cloud_db.json';
+const STAFF_PIN = process.env.MJ_STAFF_PIN || '2026';
+const STAFF_TOKEN = crypto.createHash('sha256').update('mj_cafe_staff_' + STAFF_PIN).digest('hex');
+
+function isStaffAuthorized(req) {
+  const headerToken = req.headers && (req.headers['x-staff-token'] || req.headers['X-Staff-Token']);
+  const queryToken = req.query && req.query.token;
+  const candidate = String(headerToken || queryToken || '').trim();
+  return Boolean(candidate && candidate === STAFF_TOKEN);
+}
 
 const SEED_CATEGORIAS = [
   { id: 1, nombre: 'Café de Especialidad', slug: 'cafe-especialidad', icono: '☕' },
@@ -400,7 +409,7 @@ function parseBody(req) {
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Staff-Token');
   res.setHeader('Cache-Control', 'no-store');
 
   if (req.method === 'OPTIONS') {
@@ -413,6 +422,14 @@ module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
       if (action === 'db_data') {
+        if (!isStaffAuthorized(req)) {
+          return res.status(401).json({
+            ok: false,
+            auth_required: true,
+            error: 'Acceso restringido a personal autorizado.'
+          });
+        }
+
         const pedidosDesc = [...db.pedidos].sort((a, b) => Number(b.id) - Number(a.id));
         const detallesDesc = [...db.pedido_detalles].sort((a, b) => Number(b.id) - Number(a.id));
         const clientesDesc = [...db.clientes_lealtad].sort(
@@ -472,6 +489,14 @@ module.exports = async (req, res) => {
       }
 
       if (action === 'cocina') {
+        if (!isStaffAuthorized(req)) {
+          return res.status(401).json({
+            ok: false,
+            auth_required: true,
+            error: 'Acceso restringido a personal autorizado.'
+          });
+        }
+
         const activos = db.pedidos
           .filter(p => ['pendiente', 'preparando', 'listo_para_recoger'].includes(p.estado))
           .sort((a, b) => Number(a.id) - Number(b.id));
@@ -525,6 +550,14 @@ module.exports = async (req, res) => {
 
     if (req.method === 'POST') {
       const body = await parseBody(req);
+
+      if (action === 'auth_staff') {
+        const pin = String(body.pin || '').trim();
+        if (pin && pin === STAFF_PIN) {
+          return res.status(200).json({ ok: true, token: STAFF_TOKEN });
+        }
+        return res.status(401).json({ ok: false, error: 'PIN de personal incorrecto.' });
+      }
 
       if (action === 'crear_pedido') {
         const items = Array.isArray(body.items) ? body.items : [];
@@ -600,6 +633,14 @@ module.exports = async (req, res) => {
       }
 
       if (action === 'actualizar_cocina') {
+        if (!isStaffAuthorized(req)) {
+          return res.status(401).json({
+            ok: false,
+            auth_required: true,
+            error: 'Acceso restringido a personal autorizado.'
+          });
+        }
+
         const pedidoId = Number(body.pedido_id || 0);
         const nuevoEstado = String(body.nuevo_estado || '').trim();
         const estadosValidos = ['pendiente', 'preparando', 'listo_para_recoger', 'entregado', 'cancelado'];
@@ -711,14 +752,16 @@ module.exports = async (req, res) => {
           saveDb(db);
         }
 
-        const pedidosDesc = [...db.pedidos].sort((a, b) => Number(b.id) - Number(a.id));
-        return res.status(200).json({
+        const responsePayload = {
           ok: true,
           merged_pedidos: mergedPedidos,
-          merged_clientes: mergedClientes,
-          pedidos: pedidosDesc,
-          clientes_lealtad: db.clientes_lealtad
-        });
+          merged_clientes: mergedClientes
+        };
+        if (isStaffAuthorized(req)) {
+          responsePayload.pedidos = [...db.pedidos].sort((a, b) => Number(b.id) - Number(a.id));
+          responsePayload.clientes_lealtad = db.clientes_lealtad;
+        }
+        return res.status(200).json(responsePayload);
       }
 
       return res.status(400).json({ ok: false, error: `Acción POST no reconocida: ${action}` });

@@ -10,6 +10,7 @@ import sys
 import json
 import time
 import sqlite3
+import hashlib
 import mimetypes
 import secrets
 import threading
@@ -24,6 +25,8 @@ DB_PATH = os.path.join(BASE_DIR, 'database', 'mj_cafe.sqlite')
 VERCEL_CLOUD_API = 'https://mj-cafe.vercel.app/api/db'
 PORT = 8000
 ESTADOS_VALIDOS = ('pendiente', 'preparando', 'listo_para_recoger', 'entregado', 'cancelado')
+STAFF_PIN = os.environ.get('MJ_STAFF_PIN', '2026')
+STAFF_TOKEN = hashlib.sha256(('mj_cafe_staff_' + STAFF_PIN).encode()).hexdigest()
 
 db_lock = threading.Lock()
 
@@ -494,7 +497,11 @@ def vercel_cloud_sync_loop():
             # 1. Descargar estado actual de Vercel Cloud DB
             req = urllib.request.Request(
                 f"{VERCEL_CLOUD_API}?action=db_data",
-                headers={'User-Agent': 'MJCafe-LocalSync/1.0', 'Accept': 'application/json'}
+                headers={
+                    'User-Agent': 'MJCafe-LocalSync/1.0',
+                    'Accept': 'application/json',
+                    'X-Staff-Token': STAFF_TOKEN
+                }
             )
             with urllib.request.urlopen(req, timeout=5) as resp:
                 if resp.status == 200:
@@ -518,7 +525,8 @@ def vercel_cloud_sync_loop():
                 method='POST',
                 headers={
                     'Content-Type': 'application/json',
-                    'User-Agent': 'MJCafe-LocalSync/1.0'
+                    'User-Agent': 'MJCafe-LocalSync/1.0',
+                    'X-Staff-Token': STAFF_TOKEN
                 }
             )
             with urllib.request.urlopen(post_req, timeout=5) as post_resp:
@@ -538,7 +546,20 @@ class MJCafeHandler(BaseHTTPRequestHandler):
     def send_cors_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, X-Staff-Token')
+
+    def is_staff_authorized(self, query):
+        header_token = (self.headers.get('X-Staff-Token') or '').strip()
+        query_token = (query.get('token', [''])[0] or '').strip()
+        candidate = header_token or query_token
+        return bool(candidate and candidate == STAFF_TOKEN)
+
+    def send_unauthorized(self):
+        self.send_json(401, {
+            'ok': False,
+            'auth_required': True,
+            'error': 'Acceso restringido a personal autorizado.'
+        })
 
     def send_json(self, status, data):
         body = json.dumps(data, ensure_ascii=False).encode('utf-8')
@@ -564,6 +585,9 @@ class MJCafeHandler(BaseHTTPRequestHandler):
             action = query.get('action', ['db_data'])[0]
             try:
                 if action == 'db_data':
+                    if not self.is_staff_authorized(query):
+                        self.send_unauthorized()
+                        return
                     self.send_json(200, fetch_db_data_payload())
                 elif action == 'productos':
                     cat_id = (query.get('categoria') or query.get('categoria_id') or [None])[0]
@@ -573,6 +597,9 @@ class MJCafeHandler(BaseHTTPRequestHandler):
                     status, payload = fetch_pedidos_payload(folio)
                     self.send_json(status, payload)
                 elif action == 'cocina':
+                    if not self.is_staff_authorized(query):
+                        self.send_unauthorized()
+                        return
                     self.send_json(200, fetch_cocina_payload())
                 elif action == 'lealtad':
                     tel = query.get('telefono', [''])[0]
@@ -586,6 +613,9 @@ class MJCafeHandler(BaseHTTPRequestHandler):
 
         # 1. API: Datos completos para el Visor de Base de Datos
         if path == '/api/db_data':
+            if not self.is_staff_authorized(query):
+                self.send_unauthorized()
+                return
             try:
                 self.send_json(200, fetch_db_data_payload())
             except Exception as e:
@@ -613,6 +643,9 @@ class MJCafeHandler(BaseHTTPRequestHandler):
 
         # 4. API: Cocina KDS
         if path in ('/backend/api/cocina.php', '/api/cocina'):
+            if not self.is_staff_authorized(query):
+                self.send_unauthorized()
+                return
             try:
                 self.send_json(200, fetch_cocina_payload())
             except Exception as e:
@@ -678,10 +711,19 @@ class MJCafeHandler(BaseHTTPRequestHandler):
         if path == '/api/db':
             action = query.get('action', [''])[0]
             try:
-                if action == 'crear_pedido':
+                if action == 'auth_staff':
+                    pin = str(data.get('pin') or '').strip()
+                    if pin and pin == STAFF_PIN:
+                        self.send_json(200, {'ok': True, 'token': STAFF_TOKEN})
+                    else:
+                        self.send_json(401, {'ok': False, 'error': 'PIN de personal incorrecto.'})
+                elif action == 'crear_pedido':
                     status, payload = crear_pedido_sql(data)
                     self.send_json(status, payload)
                 elif action == 'actualizar_cocina':
+                    if not self.is_staff_authorized(query):
+                        self.send_unauthorized()
+                        return
                     status, payload = actualizar_cocina_sql(data)
                     self.send_json(status, payload)
                 elif action == 'canjear_lealtad':
@@ -692,14 +734,16 @@ class MJCafeHandler(BaseHTTPRequestHandler):
                         data.get('pedidos', []),
                         data.get('clientes_lealtad', [])
                     )
-                    snapshot = fetch_db_data_payload()
-                    self.send_json(200, {
+                    resp_payload = {
                         'ok': True,
                         'merged_pedidos': mp,
-                        'merged_clientes': mc,
-                        'pedidos': snapshot['pedidos'],
-                        'clientes_lealtad': snapshot['clientes_lealtad']
-                    })
+                        'merged_clientes': mc
+                    }
+                    if self.is_staff_authorized(query):
+                        snapshot = fetch_db_data_payload()
+                        resp_payload['pedidos'] = snapshot['pedidos']
+                        resp_payload['clientes_lealtad'] = snapshot['clientes_lealtad']
+                    self.send_json(200, resp_payload)
                 else:
                     self.send_json(400, {'ok': False, 'error': f'Acción POST no reconocida: {action}'})
             except Exception as e:
@@ -717,6 +761,9 @@ class MJCafeHandler(BaseHTTPRequestHandler):
 
         # 2. API: Actualizar estado desde Cocina
         if path in ('/backend/api/cocina.php', '/api/cocina'):
+            if not self.is_staff_authorized(query):
+                self.send_unauthorized()
+                return
             try:
                 status, payload = actualizar_cocina_sql(data)
                 self.send_json(status, payload)

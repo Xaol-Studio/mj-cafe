@@ -401,8 +401,35 @@
       <a href="/html/cocina.html" class="btn-db">
         👨‍🍳 Cocina KDS
       </a>
+      <button type="button" id="btn-lock-staff" class="btn-db" style="border-color: #611624; color: #F87171;">
+        🔒 Bloquear
+      </button>
     </div>
   </header>
+
+  <!-- PANTALLA DE BLOQUEO POR PIN DE PERSONAL -->
+  <div id="staff-lock-overlay" style="position: fixed; inset: 0; z-index: 9999; background: #0D0C0A; display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div style="width: 100%; max-width: 400px; background: #141210; border: 1px solid #262420; border-radius: 10px; padding: 32px 26px; box-shadow: 0 20px 50px rgba(0,0,0,0.75); text-align: center;">
+      <div style="width: 48px; height: 48px; margin: 0 auto 14px; border-radius: 50%; background: rgba(184, 151, 88, 0.14); border: 1px solid #B89758; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">🔒</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: #B89758; margin-bottom: 6px;">MJ CAFÉ • Personal Autorizado</div>
+      <h2 style="font-family: 'Playfair Display', serif; font-size: 1.4rem; color: #FAF8F5; margin: 0 0 8px;">Visor de Base de Datos</h2>
+      <p style="font-size: 0.84rem; color: #B0ABA0; margin: 0 0 20px; line-height: 1.45;">
+        Esta área contiene información operativa y de clientes. Ingresa el PIN de personal autorizado.
+      </p>
+
+      <form id="form-staff-pin" style="display: flex; flex-direction: column; gap: 12px;">
+        <input type="password" id="input-staff-pin" inputmode="numeric" autocomplete="off" placeholder="Ingresa PIN de personal" class="form-control" style="text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; letter-spacing: 0.25em; padding: 12px;" required>
+        <div id="staff-pin-error" style="display: none; font-size: 0.82rem; color: #F87171; background: rgba(97, 22, 36, 0.28); border: 1px solid #611624; padding: 8px 12px; border-radius: 6px;"></div>
+        <button type="submit" id="btn-unlock-staff" class="btn-db btn-db-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.92rem;">
+          Desbloquear Terminal
+        </button>
+      </form>
+
+      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid #262420;">
+        <a href="/html/index.html" style="font-size: 0.82rem; color: #D4B87A; text-decoration: none;">← Volver a la Tienda</a>
+      </div>
+    </div>
+  </div>
 
   <!-- BARRA DE ESTADO CLOUD DB / SUPABASE -->
   <div id="supabase-bar" style="background: rgba(184, 151, 88, 0.08); border-bottom: 1px solid var(--border-subtle); padding: 10px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 0.82rem;">
@@ -585,10 +612,49 @@
   </main>
 
   <script type="module">
-    import { API, CATALOGO_INICIAL, SUPABASE_CONFIG, supabaseFetch, leerPedidosLocal, leerLealtadLocal, guardarPedidosLocal, sincronizarLocalConNube } from '/js/api.js?v=3';
+    import { API, CATALOGO_INICIAL, SUPABASE_CONFIG, STAFF_AUTH, fetchCloudApi, supabaseFetch, leerPedidosLocal, leerLealtadLocal, guardarPedidosLocal, sincronizarLocalConNube } from '/js/api.js?v=5';
+
+    const lockOverlay = document.getElementById('staff-lock-overlay');
+    const pinForm = document.getElementById('form-staff-pin');
+    const pinInput = document.getElementById('input-staff-pin');
+    const pinError = document.getElementById('staff-pin-error');
+    const btnUnlock = document.getElementById('btn-unlock-staff');
 
     let ultimosIds = new Set();
     let primerCarga = true;
+    let dbPollTimer = null;
+
+    function mostrarBloqueo(msg = '') {
+      if (dbPollTimer) {
+        clearInterval(dbPollTimer);
+        dbPollTimer = null;
+      }
+      document.getElementById('tbody-pedidos').innerHTML = '';
+      document.getElementById('tbody-detalles').innerHTML = '';
+      document.getElementById('tbody-lealtad').innerHTML = '';
+      document.getElementById('tbody-productos').innerHTML = '';
+      document.getElementById('stat-total-pedidos').textContent = '0';
+      document.getElementById('stat-ingresos').textContent = '$0.00';
+      document.getElementById('stat-pendientes').textContent = '0';
+      document.getElementById('stat-clientes').textContent = '0';
+
+      if (msg) {
+        pinError.textContent = msg;
+        pinError.style.display = 'block';
+      } else {
+        pinError.style.display = 'none';
+      }
+      lockOverlay.style.display = 'flex';
+      pinInput.focus();
+    }
+
+    function desbloquearVista() {
+      lockOverlay.style.display = 'none';
+      pinError.style.display = 'none';
+      if (!dbPollTimer) {
+        dbPollTimer = setInterval(cargarDatosBD, 1500);
+      }
+    }
 
     // Manejo de configuración de Supabase UI
     const inputSbUrl = document.getElementById('input-sb-url');
@@ -648,6 +714,11 @@
     });
 
     async function cargarDatosBD() {
+      if (!STAFF_AUTH.isAuthenticated()) {
+        mostrarBloqueo();
+        return;
+      }
+
       // 1. Si Supabase está configurado, consultar Supabase Cloud SQL
       if (SUPABASE_CONFIG.isConfigured()) {
         try {
@@ -666,6 +737,7 @@
           const badgePath = document.getElementById('db-file-path');
           if (badgePath) badgePath.textContent = `Supabase Cloud SQL (${SUPABASE_CONFIG.url})`;
 
+          desbloquearVista();
           actualizarMetricas(stats);
           renderizarPedidos(pedidos);
           renderizarDetalles((detalles || []).map(d => ({
@@ -687,58 +759,65 @@
         }
       }
 
-      // 2. Consultar Cloud DB en Vercel (/api/db?action=db_data) o servidor SQLite local
+      // 2. Consultar Cloud DB en Vercel (/api/db?action=db_data) o servidor SQLite local con X-Staff-Token
       try {
-        const res = await fetch('/api/db?action=db_data', { cache: 'no-store' });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.ok) {
-            // Re-hidratar en caliente si localStorage tiene folios no presentes tras cold-start
-            const localPedidos = typeof leerPedidosLocal === 'function' ? leerPedidosLocal() : [];
-            const cloudFolios = new Set((data.pedidos || []).map(p => String(p.folio || '').toUpperCase()));
-            const faltantes = localPedidos.filter(p => p.folio && !cloudFolios.has(String(p.folio).toUpperCase()));
-            if (faltantes.length > 0 && typeof sincronizarLocalConNube === 'function') {
-              await sincronizarLocalConNube();
-              const resSync = await fetch('/api/db?action=db_data', { cache: 'no-store' });
-              if (resSync.ok) {
-                const synced = await resSync.json();
-                if (synced.ok) Object.assign(data, synced);
-              }
-            } else if (Array.isArray(data.pedidos) && data.pedidos.length > 0 && typeof guardarPedidosLocal === 'function') {
-              guardarPedidosLocal(data.pedidos);
-            }
-
-            const badgePath = document.getElementById('db-file-path');
-            if (badgePath) {
-              badgePath.textContent = data.origen === 'sqlite_local'
-                ? 'SQLite Local (database/mj_cafe.sqlite) + Sync Cloud'
-                : 'Base de Datos Cloud en Vercel (/api/db)';
-            }
-
-            actualizarMetricas(data.stats);
-            renderizarPedidos(data.pedidos);
-            renderizarDetalles(data.pedido_detalles);
-            renderizarLealtad(data.clientes_lealtad);
-            renderizarProductos(data.productos);
-
-            document.getElementById('sync-timer').textContent = 'Última sinc: ' + new Date().toLocaleTimeString();
-            primerCarga = false;
-            return;
+        const data = await fetchCloudApi('db_data', '', { cache: 'no-store' });
+        if (data && data.ok) {
+          const localPedidos = typeof leerPedidosLocal === 'function' ? leerPedidosLocal() : [];
+          const cloudFolios = new Set((data.pedidos || []).map(p => String(p.folio || '').toUpperCase()));
+          const faltantes = localPedidos.filter(p => p.folio && !cloudFolios.has(String(p.folio).toUpperCase()));
+          if (faltantes.length > 0 && typeof sincronizarLocalConNube === 'function') {
+            await sincronizarLocalConNube();
+            const synced = await fetchCloudApi('db_data', '', { cache: 'no-store' });
+            if (synced && synced.ok) Object.assign(data, synced);
+          } else if (Array.isArray(data.pedidos) && data.pedidos.length > 0 && typeof guardarPedidosLocal === 'function') {
+            guardarPedidosLocal(data.pedidos);
           }
+
+          const badgePath = document.getElementById('db-file-path');
+          if (badgePath) {
+            badgePath.textContent = data.origen === 'sqlite_local'
+              ? 'SQLite Local (database/mj_cafe.sqlite) + Sync Cloud'
+              : 'Base de Datos Cloud en Vercel (/api/db)';
+          }
+
+          desbloquearVista();
+          actualizarMetricas(data.stats);
+          renderizarPedidos(data.pedidos);
+          renderizarDetalles(data.pedido_detalles);
+          renderizarLealtad(data.clientes_lealtad);
+          renderizarProductos(data.productos);
+
+          document.getElementById('sync-timer').textContent = 'Última sinc: ' + new Date().toLocaleTimeString();
+          primerCarga = false;
+          return;
         }
       } catch (err) {
-        // Intentar endpoint legado /api/db_data o respaldo local
+        if (err.status === 401) {
+          STAFF_AUTH.logout();
+          mostrarBloqueo(err.message || 'Sesión expirada. Ingresa tu PIN.');
+          return;
+        }
       }
 
-      // 3. Fallback a endpoint legado /api/db_data si existe
+      // 3. Fallback a endpoint legado /api/db_data si existe y el token sigue válido
       try {
-        const res = await fetch('/api/db_data', { cache: 'no-store' });
+        const res = await fetch('/api/db_data', {
+          cache: 'no-store',
+          headers: { 'X-Staff-Token': STAFF_AUTH.getToken() }
+        });
+        if (res.status === 401) {
+          STAFF_AUTH.logout();
+          mostrarBloqueo('Acceso restringido a personal autorizado.');
+          return;
+        }
         if (res.ok) {
           const data = await res.json();
           if (data.ok) {
             const badgePath = document.getElementById('db-file-path');
             if (badgePath) badgePath.textContent = 'Conectado a SQLite Local (database/mj_cafe.sqlite)';
 
+            desbloquearVista();
             actualizarMetricas(data.stats);
             renderizarPedidos(data.pedidos);
             renderizarDetalles(data.pedido_detalles);
@@ -752,7 +831,8 @@
         }
       } catch (_) {}
 
-      // 4. Si estamos sin servidor, cargar los pedidos guardados en la sesión del navegador
+      // 4. Solo si ya pasó autenticación sin servidor remoto, mostrar respaldo local
+      desbloquearVista();
       cargarDesdeStorageVercel();
     }
 
@@ -945,14 +1025,46 @@
       `).join('');
     }
 
-    // Inicialización y polling
+    // Inicialización y control de acceso por PIN
     document.getElementById('btn-manual-refresh').addEventListener('click', cargarDatosBD);
-    (async () => {
-      if (!SUPABASE_CONFIG.isConfigured()) {
-        await sincronizarLocalConNube();
+    document.getElementById('btn-lock-staff').addEventListener('click', () => {
+      STAFF_AUTH.logout();
+      mostrarBloqueo();
+    });
+
+    pinForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      pinError.style.display = 'none';
+      btnUnlock.disabled = true;
+      btnUnlock.textContent = 'Verificando...';
+
+      const authRes = await API.autenticarPersonal(pinInput.value);
+
+      btnUnlock.disabled = false;
+      btnUnlock.textContent = 'Desbloquear Terminal';
+
+      if (authRes.ok) {
+        pinInput.value = '';
+        if (!SUPABASE_CONFIG.isConfigured()) {
+          await sincronizarLocalConNube();
+        }
+        await cargarDatosBD();
+      } else {
+        pinError.textContent = authRes.error || 'PIN de personal incorrecto.';
+        pinError.style.display = 'block';
+        pinInput.select();
       }
-      await cargarDatosBD();
-      setInterval(cargarDatosBD, 1500);
+    });
+
+    (async () => {
+      if (STAFF_AUTH.isAuthenticated()) {
+        if (!SUPABASE_CONFIG.isConfigured()) {
+          await sincronizarLocalConNube();
+        }
+        await cargarDatosBD();
+      } else {
+        mostrarBloqueo();
+      }
     })();
   </script>
 </body>

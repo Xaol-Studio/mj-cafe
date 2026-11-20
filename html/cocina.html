@@ -278,11 +278,38 @@
       <a href="/html/db_viewer.html" class="btn btn-outline" style="padding: 7px 12px; font-size: 0.8rem;" title="Ver registros en SQLite">
         Base de Datos
       </a>
+      <button id="btn-lock-staff" class="btn btn-outline" style="padding: 7px 12px; font-size: 0.8rem; border-color: #611624; color: #F87171;" title="Bloquear terminal de personal">
+        🔒 Bloquear
+      </button>
       <a href="/html/index.html" class="btn btn-primary" style="padding: 7px 14px; font-size: 0.8rem;">
         Volver a la Tienda
       </a>
     </div>
   </header>
+
+  <!-- PANTALLA DE BLOQUEO POR PIN DE PERSONAL -->
+  <div id="staff-lock-overlay" style="position: fixed; inset: 0; z-index: 9999; background: #0D0C0A; display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div style="width: 100%; max-width: 400px; background: #141210; border: 1px solid #262420; border-radius: 10px; padding: 32px 26px; box-shadow: 0 20px 50px rgba(0,0,0,0.75); text-align: center;">
+      <div style="width: 48px; height: 48px; margin: 0 auto 14px; border-radius: 50%; background: rgba(184, 151, 88, 0.14); border: 1px solid #B89758; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">🔒</div>
+      <div style="font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: #B89758; margin-bottom: 6px;">MJ CAFÉ • Personal Autorizado</div>
+      <h2 class="font-serif" style="font-size: 1.4rem; color: #FAF8F5; margin: 0 0 8px;">Terminal de Cocina (KDS)</h2>
+      <p style="font-size: 0.84rem; color: #B0ABA0; margin: 0 0 20px; line-height: 1.45;">
+        Esta área es exclusiva para baristas y personal de tienda. Ingresa tu PIN para continuar.
+      </p>
+
+      <form id="form-staff-pin" style="display: flex; flex-direction: column; gap: 12px;">
+        <input type="password" id="input-staff-pin" inputmode="numeric" autocomplete="off" placeholder="Ingresa PIN de personal" class="form-control" style="text-align: center; font-family: var(--font-mono); font-size: 1.1rem; letter-spacing: 0.25em; padding: 12px;" required>
+        <div id="staff-pin-error" style="display: none; font-size: 0.82rem; color: #F87171; background: rgba(97, 22, 36, 0.28); border: 1px solid #611624; padding: 8px 12px; border-radius: 6px;"></div>
+        <button type="submit" id="btn-unlock-staff" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 0.92rem;">
+          Desbloquear Terminal
+        </button>
+      </form>
+
+      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid #262420;">
+        <a href="/html/index.html" style="font-size: 0.82rem; color: #D4B87A; text-decoration: none;">← Volver a la Tienda</a>
+      </div>
+    </div>
+  </div>
 
   <section class="kds-summary-bar">
     <div class="kds-stat-card">
@@ -334,10 +361,59 @@
   </main>
 
   <script type="module">
-    import { API } from '/js/api.js?v=3';
+    import { API, STAFF_AUTH } from '/js/api.js?v=5';
+
+    const lockOverlay = document.getElementById('staff-lock-overlay');
+    const pinForm = document.getElementById('form-staff-pin');
+    const pinInput = document.getElementById('input-staff-pin');
+    const pinError = document.getElementById('staff-pin-error');
+    const btnUnlock = document.getElementById('btn-unlock-staff');
+    let kdsPollTimer = null;
+
+    function mostrarBloqueo(msg = '') {
+      if (kdsPollTimer) {
+        clearInterval(kdsPollTimer);
+        kdsPollTimer = null;
+      }
+      document.getElementById('col-body-pendientes').innerHTML = '';
+      document.getElementById('col-body-preparando').innerHTML = '';
+      document.getElementById('col-body-listo').innerHTML = '';
+      document.getElementById('stat-activos').textContent = '0';
+      document.getElementById('stat-entregados').textContent = '0';
+      document.getElementById('stat-ingresos').textContent = '$0.00 MXN';
+
+      if (msg) {
+        pinError.textContent = msg;
+        pinError.style.display = 'block';
+      } else {
+        pinError.style.display = 'none';
+      }
+      lockOverlay.style.display = 'flex';
+      pinInput.focus();
+    }
+
+    function desbloquearVista() {
+      lockOverlay.style.display = 'none';
+      pinError.style.display = 'none';
+      if (!kdsPollTimer) {
+        kdsPollTimer = setInterval(cargarPedidosKds, 10000);
+      }
+    }
 
     async function cargarPedidosKds() {
+      if (!STAFF_AUTH.isAuthenticated()) {
+        mostrarBloqueo();
+        return false;
+      }
+
       const res = await API.obtenerPedidosCocina();
+      if (!res || res.auth_required) {
+        STAFF_AUTH.logout();
+        mostrarBloqueo(res?.error || 'Sesión expirada. Ingresa tu PIN.');
+        return false;
+      }
+
+      desbloquearVista();
       const pedidos = res.pedidos || [];
       const resumen = res.resumen || { total_pedidos: pedidos.length, ingresos_totales: 0, entregados: 0 };
 
@@ -465,8 +541,37 @@
     });
 
     document.getElementById('btn-refresh-kds').addEventListener('click', cargarPedidosKds);
-    cargarPedidosKds();
-    setInterval(cargarPedidosKds, 10000);
+    document.getElementById('btn-lock-staff').addEventListener('click', () => {
+      STAFF_AUTH.logout();
+      mostrarBloqueo();
+    });
+
+    pinForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      pinError.style.display = 'none';
+      btnUnlock.disabled = true;
+      btnUnlock.textContent = 'Verificando...';
+
+      const authRes = await API.autenticarPersonal(pinInput.value);
+
+      btnUnlock.disabled = false;
+      btnUnlock.textContent = 'Desbloquear Terminal';
+
+      if (authRes.ok) {
+        pinInput.value = '';
+        await cargarPedidosKds();
+      } else {
+        pinError.textContent = authRes.error || 'PIN de personal incorrecto.';
+        pinError.style.display = 'block';
+        pinInput.select();
+      }
+    });
+
+    if (STAFF_AUTH.isAuthenticated()) {
+      cargarPedidosKds();
+    } else {
+      mostrarBloqueo();
+    }
   </script>
 </body>
 </html>

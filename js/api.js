@@ -7,6 +7,35 @@ export const API_BASE_URL = '../backend/api';
 export const CLOUD_API_URL = '/api/db';
 export const STORAGE_KEY_PEDIDOS = 'mj_cafe_pedidos_v1';
 export const STORAGE_KEY_LEALTAD = 'mj_cafe_lealtad_v1';
+export const STORAGE_KEY_STAFF_TOKEN = 'mj_staff_token_v1';
+
+export const STAFF_AUTH = {
+  getToken() {
+    try {
+      return sessionStorage.getItem(STORAGE_KEY_STAFF_TOKEN) || '';
+    } catch {
+      return '';
+    }
+  },
+
+  isAuthenticated() {
+    return Boolean(this.getToken());
+  },
+
+  setToken(token) {
+    try {
+      if (token) {
+        sessionStorage.setItem(STORAGE_KEY_STAFF_TOKEN, String(token));
+      }
+    } catch (_) {}
+  },
+
+  logout() {
+    try {
+      sessionStorage.removeItem(STORAGE_KEY_STAFF_TOKEN);
+    } catch (_) {}
+  }
+};
 
 export const SUPABASE_CONFIG = {
   url: window.SUPABASE_URL || localStorage.getItem('mj_supabase_url') || '',
@@ -324,7 +353,12 @@ async function fetchJsonSeguro(url, options = {}) {
 export async function fetchCloudApi(action, queryParams = '', options = {}) {
   const qs = queryParams ? `&${queryParams.replace(/^&/, '')}` : '';
   const url = `${CLOUD_API_URL}?action=${encodeURIComponent(action)}${qs}`;
-  const response = await fetch(url, options);
+  const token = STAFF_AUTH.getToken();
+  const headers = {
+    ...(options.headers || {}),
+    ...(token ? { 'X-Staff-Token': token } : {})
+  };
+  const response = await fetch(url, { ...options, headers });
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('application/json')) {
     throw new Error('Cloud API no disponible en este entorno');
@@ -883,7 +917,28 @@ export const API = {
     }
   },
 
+  async autenticarPersonal(pin) {
+    try {
+      const data = await fetchCloudApi('auth_staff', '', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: String(pin || '').trim() })
+      });
+      if (data && data.ok && data.token) {
+        STAFF_AUTH.setToken(data.token);
+        return { ok: true, token: data.token };
+      }
+      return { ok: false, error: (data && data.error) || 'PIN incorrecto' };
+    } catch (err) {
+      return { ok: false, error: err.message || 'PIN incorrecto' };
+    }
+  },
+
   async obtenerPedidosCocina() {
+    if (!STAFF_AUTH.isAuthenticated()) {
+      return { ok: false, auth_required: true, error: 'Acceso restringido a personal autorizado.' };
+    }
+
     if (SUPABASE_CONFIG.isConfigured()) {
       try {
         const pedidos = await supabaseFetch('pedidos?estado=in.(pendiente,preparando,listo_para_recoger)&select=*,items:pedido_detalles(*,producto:productos(nombre))&order=id.asc');
@@ -917,7 +972,11 @@ export const API = {
     try {
       const data = await fetchCloudApi('cocina');
       if (data && data.ok) return data;
-    } catch {
+    } catch (err) {
+      if (err.status === 401) {
+        STAFF_AUTH.logout();
+        return { ok: false, auth_required: true, error: err.message };
+      }
       // Continuar con PHP o respaldo local
     }
 
@@ -941,6 +1000,10 @@ export const API = {
   },
 
   async actualizarEstadoCocina(pedidoId, nuevoEstado) {
+    if (!STAFF_AUTH.isAuthenticated()) {
+      return { ok: false, auth_required: true, error: 'Acceso restringido a personal autorizado.' };
+    }
+
     if (SUPABASE_CONFIG.isConfigured()) {
       try {
         await supabaseFetch(`pedidos?id=eq.${pedidoId}`, {
@@ -971,7 +1034,11 @@ export const API = {
         }
         return data;
       }
-    } catch {
+    } catch (err) {
+      if (err.status === 401) {
+        STAFF_AUTH.logout();
+        return { ok: false, auth_required: true, error: err.message };
+      }
       // Continuar con PHP o respaldo local
     }
 
