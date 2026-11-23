@@ -13,3 +13,5 @@ Thumbs.db
 .idea/
 .vercel
 .env*
+__pycache__/
+*.pyc

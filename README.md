@@ -65,12 +65,21 @@ Reducir en más de un **60%** el tiempo de espera presencial en barra (pasando d
 3. **Servicios Backend y Lealtad:** Construir una API RESTful en PHP 8 con PDO y transacciones ACID para validar precios en servidor, generar folios únicos (`MJ-AAAA-XXXX`) y acreditar sellos automáticos en Club MJ (6to café en cortesía).
 4. **Control Operativo en Barra (KDS):** Implementar una pantalla de cocina en tiempo real que permita al barista actualizar el ciclo de vida de cada comanda (`pendiente` → `preparando` → `listo_para_recoger` → `entregado`) y visualizar métricas de turno.
 
-### 5. Estrategia y Análisis FODA (Enfoque Interno)
+### 5. Estrategia y Análisis FODA
 
-| Dimensión Interna | Factores Clave |
+| Dimensión | Factores Clave |
 | :--- | :--- |
-| **Fortalezas** | • **Ubicación estratégica:** A 1 minuto del acceso vehicular de FES Cuautitlán Campo 4.<br>• **Recolección directa en barra sin filas en horas pico:** Operación 100% presencial en tienda (solo pick-up, sin repartidores ni intermediarios).<br>• **Fidelización digital (Club MJ):** Acumulación automática por número telefónico y canje directo.<br>• **Resiliencia técnica:** Backend PHP/PDO con respaldo automático en navegador (`localStorage`) para demostraciones o contingencias de red. |
+| **Fortalezas** | • **Ubicación estratégica:** A 1 minuto del acceso vehicular de FES Cuautitlán Campo 4.<br>• **Recolección directa en barra sin filas en horas pico:** Operación 100% presencial en tienda (solo pick-up, sin repartidores ni intermediarios).<br>• **Fidelización digital (Club MJ):** Acumulación automática por número telefónico (6to café en cortesía).<br>• **Resiliencia técnica:** Backend PHP/PDO con respaldo automático en navegador (`localStorage`) para demostraciones o contingencias de red. |
+| **Oportunidades** | • **Alta rotación estudiantil diaria:** Miles de estudiantes y docentes con ventanas de 10–15 min entre clases.<br>• **Creación de hábito digital:** Adopción rápida de pre-orden desde celular y pagos por SPEI/Dimo.<br>• **Expansión futura:** Posibilidad de integrar paquetes de desayuno por facultad y avisos por WhatsApp. |
 | **Debilidades** | • **Capacidad física en barra:** La máquina de espresso y la plancha tienen un límite de producción simultánea en horas pico (11:00–13:00 hrs).<br>• **Validación manual de pagos:** Los pagos en efectivo en barra y transferencias SPEI requieren confirmación visual del barista.<br>• **Dependencia de conectividad en local:** La sincronización de la terminal KDS depende de conexión estable a internet en el establecimiento. |
+| **Amenazas** | • **Competencia cercana:** Puestos ambulantes, cooperativas internas y cafeterías aledañas a Campo 4.<br>• **Periodos intersemestrales y vacaciones:** Disminución de demanda fuera del calendario escolar UNAM.<br>• **Fallas de red o servicio eléctrico:** Interrupciones temporales de internet en la zona de San Sebastián Xhala. |
+
+### 6. Organización Visual y Estructura de Navegación
+La plataforma separa de forma clara cada flujo para que el estudiante o barista encuentre lo que necesita sin pasos innecesarios:
+- **Menú y Catálogo Principal (`/`):** Barra superior fija con acceso a búsqueda en tiempo real, filtros por categoría (*Café de Especialidad*, *Frappés & Frías*, *Alimentos & Bagels*, *Panadería & Postres*) y tarjetas con precio y tiempo de preparación.
+- **Carrito Lateral y Pre-Orden:** Drawer deslizable que reúne personalizaciones, horario de recolección, método de pago y validación antes de generar el folio.
+- **Rastreo por Folio y Club MJ:** Modales dedicados para consultar el avance de un pedido (`pendiente` → `preparando` → `listo_para_recoger`) y revisar los sellos acumulados por número telefónico.
+- **Terminal de Barista KDS (`/cocina`) y Visor BD (`/db`):** Vistas operativas para gestionar comandas en 3 columnas y auditar las tablas en tiempo real.
 
 ---
 
